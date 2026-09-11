@@ -1,0 +1,324 @@
+# Jin · 锦
+
+A token-driven Vue 3 control library for desktop applications.
+
+**What the name means.** 锦 is brocade: a fabric woven from many small repeated units, dyed in
+many colourways. That is the shape of this library — components are the repeat units, themes are the
+colourways. It is the Chinese word, read as `jin`, not a Japanese reading of it.
+
+---
+
+## The two ideas the library is built on
+
+**1. Tokens are the only interface between the library and an application.** A theme does not just
+set colours. It declares shape, depth, texture, motion, typography and density too, because the
+styles this library has to support differ far more in *form* than in hue: one has 20px radii and
+springy motion, another has square corners and no animations at all. All 80 contract tokens are
+listed in [`contracts/tokens.json`](contracts/tokens.json) and every theme file defines every one
+of them.
+
+**2. Logic is separate from rendering.** Every state machine — anchored positioning, focus traps and
+focus return, roving tabindex navigation, menu and tree navigation, hotkey recording, the overlay
+stack, the toast queue — lives in plain TypeScript under `src/core/`. None of it imports Vue and all
+of it is unit tested without a browser. Components only render and bind events. This is what makes
+the behaviour shared across applications instead of re-implemented per control.
+
+---
+
+## Install
+
+The library is consumed as source, not as a build artifact. That way an edit to the library is
+visible to both applications immediately, with no rebuild step in between.
+
+```jsonc
+// package.json of the consuming application
+{
+  "dependencies": {
+    "jin-ui": "file:../jin"     // or an npm workspace entry
+  }
+}
+```
+
+`vue` stays a **peer** dependency. Two settings in the consumer's Vite config are not optional:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  resolve: {
+    // Without this the linked library brings a second copy of Vue, and the
+    // symptom is silent reactivity breakage rather than an error.
+    dedupe: ['vue'],
+  },
+  server: {
+    // The library lives outside the app root, so the dev server must be
+    // allowed to read it.
+    fs: { allow: ['..'] },
+  },
+})
+```
+
+A publish build is also available (`npm run build`) and emits ESM + `.d.ts` + `jin.css` for
+consumers that would rather not compile source.
+
+---
+
+## Use
+
+```ts
+// main.ts
+import { createApp } from 'vue'
+import { JinUI } from 'jin-ui'
+import 'jin-ui/styles'
+import 'jin-ui/themes/jin.css'
+import 'jin-ui/themes/jin.dark.css'
+import App from './App.vue'
+
+createApp(App)
+  .use(JinUI, {
+    // All three are optional. Omitting them is a supported configuration.
+    t: (key, vars) => i18n.t(key, vars),
+    capabilities: {
+      pickFolder: async () => '/some/path',
+      openExternal: async (url) => { /* … */ },
+    },
+    theme: {
+      onChange: (snapshot) => localStorage.setItem('theme', JSON.stringify(snapshot)),
+    },
+  })
+  .mount('#app')
+```
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { JinButton, JinTree, type TreeNode } from 'jin-ui'
+
+const nodes = ref<TreeNode[]>([{ id: 'a', label: 'Alpha', hasChildren: true }])
+
+async function loadChildren(node: TreeNode): Promise<TreeNode[]> {
+  const response = await fetch(`/api/children/${node.id}`)
+  if (!response.ok) throw new Error(`Server said ${response.status}`)
+  return response.json()
+}
+</script>
+
+<template>
+  <JinButton variant="primary" @click="save">Save</JinButton>
+
+  <JinTree :nodes="nodes" :load="loadChildren" @load-error="rollback" />
+</template>
+```
+
+### The three injection points
+
+| Option | What it does | If you omit it |
+| --- | --- | --- |
+| `t` | Translates the library's UI strings | The library's readable English defaults are used |
+| `capabilities` | Supplies `pickFolder` / `openExternal` / clipboard access | Controls that need them hide the affordance instead of failing |
+| `theme` | Persists style and mode; the library never touches storage itself | Style and mode live for the session only |
+
+The library needs 25 strings. They are declared in
+[`contracts/strings.json`](contracts/strings.json); no key contains a business word, because the
+library has no business vocabulary to translate. An application whose dictionary is keyed by source
+text (Chinese, say) writes a small mapping layer — that layer belongs to the application.
+
+---
+
+## Theming
+
+Two orthogonal axes, set as attributes on `<html>`:
+
+```html
+<html data-jin-style="jin" data-jin-mode="dark">
+```
+
+| | |
+| --- | --- |
+| `data-jin-style` | Which visual language: `jin` (default), `dimensional-layering`, `brutalism`, … |
+| `data-jin-mode` | `dark` (Jin's signature 玄锦) or `light` (素锦) |
+
+Each theme file is named `风格[.dark].css` and is **self-contained**: it restates the entire
+contract rather than relying on values left over from another style. Switching a theme is therefore
+just swapping a file — no cascade archaeology.
+
+Two shipped styles, chosen to be opposites so the abstraction is genuinely tested:
+
+| | Jin · 锦 (default) | Dimensional Layering | Brutalism |
+| --- | --- | --- | --- |
+| Radius | 3 / 5 / 7px | 6 / 10 / 14px | 0 |
+| Elevation | top-lit edge + micro-emboss | four shadow levels | none |
+| Duration | 150 / 200 / 250ms | 120 / 200 / 320ms | 0s |
+| Borders | 1px gold filament | 1px hairline | 3px, always visible |
+| Titles | serif / Songti | same as body | same as body |
+| Texture | warp/weft grid (opt-in) | none | none |
+
+Jin is the house style and the library default; it opens in its signature **dark** mode (玄锦), with a
+light variant (素锦). Its full specification is in [docs/theming.md](docs/theming.md); the one-line
+identity of every style is in the Gallery's style switcher, and the tokens any style defines are
+browsed live in the Gallery's token panel.
+
+Token names are frozen at the `--jin-` prefix. It is simultaneously the CSS namespace and the
+component namespace, so it is not something to be renamed later.
+
+### Where the styles come from
+
+**Jin（锦）is original work** — the library's own visual identity, and the default.
+
+**The other styles are implementations of entries in
+[nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)**
+(MIT, © 2024 Next Level Builder), a catalogue of searchable UI styles. That catalogue is where the
+requirement to make tokens cover shape, depth and motion — not just colour — came from, and
+`brutalism` and `dimensional-layering` are its first two entries implemented here.
+
+We implement the *characteristics* of each style against this library's 80-token contract; no
+stylesheet from that project is copied, because it ships guidance rather than CSS. Every such theme
+credits its source in its own file header. Full attribution: [CREDITS.md](CREDITS.md).
+
+### Writing a theme
+
+1. Copy the token list from `contracts/tokens.json` (or run the checker on a work in progress).
+2. Define **all** of them under `:root[data-jin-style='your-style']`.
+3. Run `npm run check` — token completeness is enforced mechanically, not by review.
+4. Add the file to the Gallery's `main.ts` imports and it becomes selectable.
+5. Run `npm run check:contrast` — a theme whose muted text lands at 4.4:1 looks fine and is not fine.
+
+`--jin-focus-ring-*` deserves a note: it is declared explicitly in every theme and never derived
+from the accent colour. Keyboard focus is a hard requirement, and a style that happens to place its
+accent near its own background would otherwise erase it.
+
+---
+
+## What is in the box
+
+**Feedback** — `JinSpinner` `JinProgress` `JinSkeleton` `JinAlert` `JinToastRegion`
+`JinNotificationRegion` `JinResult`
+**Overlays** — `JinModal` `JinDrawer` `JinPopover` `JinTooltip` `JinPopconfirm`
+**Forms** — `JinField` `JinTextField` `JinSearchField` `JinSelect` `JinCheckbox` `JinRadioGroup`
+`JinSwitch` `JinHotkeyRecorder`
+**Navigation** — `JinTabs` `JinMenu` `JinDropdown` `JinContextMenu` `JinBreadcrumb` `JinDivider`
+`JinCard` `JinToolbar` `JinNav` `JinTree`
+**Data** — `JinBadge` `JinTag` `JinDetailList` `JinLink` `JinIcon`
+
+Deliberately absent, and why: date and time pickers, colour pickers, data grids, virtualised lists,
+avatars, carousels, sliders, ratings and product tours. Each is either a second product's worth of
+work (a calendar) or a solved-by-CSS non-problem (`text`, `label`, `link`), so none of them benefits
+from being abstracted into a shared control.
+
+### Toast versus notification
+
+They look similar and are not interchangeable:
+
+| | Toast | Notification |
+| --- | --- | --- |
+| Lifetime | auto-dismisses after a duration | stays until dismissed |
+| Interrupts | never — it must not demand a response | yes; it is for decisions |
+| Put in it | confirmation that something happened | anything the user must act on |
+| If ignored | nothing is lost | it is still there later |
+
+Both run on the same queue, which is why the eviction rule matters: when a position is full, the
+**oldest toast** is dropped, never a notification. Losing a confirmation is a small annoyance;
+losing a decision the user still had to make is not.
+
+---
+
+## Accessibility
+
+Not a checklist bolted on afterwards — it is why several modules exist at all.
+
+- Every interactive control is keyboard reachable with a visible focus ring drawn from the focus
+  tokens.
+- Overlays trap focus while open, and return it to the element that opened them on close — never to
+  `<body>`.
+- Nested overlays close one at a time: Escape reaches only the topmost entry.
+- State is never communicated by colour alone. Every tone pairs with an icon, and every value that
+  matters also appears as text.
+- `prefers-reduced-motion: reduce` sets every duration token to `0s`, and the mechanical animations
+  (spinner, skeleton sweep) are exempted on purpose, because a frozen spinner no longer says
+  "working".
+- Long lists and toolbars use roving tabindex: one tab stop for the group, arrows within it.
+
+---
+
+## Development
+
+```bash
+npm install
+npm run test          # pure logic + component tests
+npm run check         # the five discipline checks + the contrast audit
+npm run typecheck
+npm run build         # optional publish artifact
+```
+
+### Starting the gallery
+
+```bash
+python start_gallery.py              # dev server, opens the browser
+python start_gallery.py --tauri      # the desktop shell
+python start_gallery.py --build      # production build, then serve it
+python start_gallery.py --port 5300  # a different port
+python start_gallery.py --no-browser # don't open a window
+```
+
+`npm run gallery` / `gallery:tauri` / `gallery:build` are equivalent — they call the same script.
+
+The script checks the prerequisites before starting (and says which one is missing), reuses a
+gallery that is already running on the port instead of starting a second one, moves to the next
+free port if something unrelated holds it, and kills the **whole process tree** on Ctrl+C. That
+last part matters more than it sounds: `npm` spawns `node`, which spawns `vite`, so interrupting
+only the parent leaves an orphan holding the port, and the next start then fails with "port already
+in use".
+
+### The discipline checks
+
+`tools/check_tokens.py` enforces the rules that code review reliably misses:
+
+1. every theme file defines every contract token;
+2. no hardcoded colours, radii, shadows, durations or font sizes outside the theme layer;
+3. no business vocabulary anywhere in the library's source;
+4. no library file imports application code;
+5. `jin-` classes, `Jin*` components, `data-jin-*` attributes, and no global element selectors.
+
+`tools/check_contrast.py` separately measures every theme's text and focus colours against the
+surfaces they actually sit on, and fails below 4.5:1 (body text) or 3:1 (focus rings). It composites
+translucent tints onto their real background first, because comparing against a raw `rgba()` triple
+reports failures that do not exist — and misses ones that do.
+
+Check 3 (no business vocabulary) has a deliberate gap. Catching an application's nouns means naming
+them, and naming them in a tracked file would publish the very words the rule keeps out. So a
+per-checkout file carries them:
+
+```bash
+cp tools/check_tokens.local.json.example tools/check_tokens.local.json
+# then add your application's nouns
+```
+
+That file is gitignored. Without it the generic checks still run, so a fresh clone behaves the
+same — it just cannot know which words are business vocabulary for *your* applications.
+
+The whitelists it uses (structural numbers, mechanical animation rates) are written out explicitly in
+the script, so relaxing a rule is a visible, reviewable act rather than a quiet regex tweak.
+
+### Architecture
+
+```
+contracts/     the token and string contracts — the two files both applications agree on
+themes/        one file per style[.mode], each defining the whole contract
+               (jin, dimensional-layering, brutalism — each with a .dark variant)
+src/core/      pure TypeScript: positioning, focus, roving tabindex, menu, tree, hotkeys, queue
+src/composables/  the DOM side of those modules, plus the overlay controller
+src/injection/    translation, capabilities, theme, and the plugin that wires them
+src/components/   one .vue file per control
+src/styles/       one stylesheet, rooted at .jin-* only
+tools/         the mechanical checks
+gallery/       the gallery application and its Tauri shell
+```
+
+`src/core/` is where the interesting behaviour lives, and it is the part that can be tested without
+a browser. If a behaviour can be expressed as a decision, it belongs there rather than in a `.vue`
+file.
+
+---
+
+## License
+
+MIT

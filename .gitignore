@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+gallery/dist/
+
+# Rust build artefacts (Tauri shell)
+gallery/src-tauri/target/
+
+# local machine state
+*.local
+.DS_Store
+*.log
+
+# ---------------------------------------------------------------------------
+# Not for publication
+#
+# Local notes and the per-checkout vocabulary file stay on disk and out of
+# history. The vocabulary file holds the business nouns the discipline check
+# should reject, and those nouns are themselves the thing being kept out of
+# the repository — so the ignored filename is matched by pattern rather than
+# written out here.
+# ---------------------------------------------------------------------------
+docs/*prompt.md
+tools/check_tokens.local.json
