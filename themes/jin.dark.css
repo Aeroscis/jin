@@ -2,20 +2,23 @@
  * Jin theme — dark mode: 玄锦 (dark brocade). This is the signature mode.
  * Style axis: data-jin-style="jin"  ·  Mode axis: data-jin-mode="dark"
  *
- * 玄青 ground, 米白 text, and 金 reserved for boundaries, focus and emphasis.
+ * 玄青 ground, near-neutral light text, and 金 reserved for focus, strong
+ * boundaries and emphasis — not for every border.
  *
  * Two things are deliberate here and easy to get wrong:
  *
  * 1. --jin-accent on a dark ground is NOT the same red as in the light theme.
- *    A deep 朱红 (#a83a29) on #14212b measures only 2.6:1 — fine as a fill under
- *    white text, unusable as text or as a thin icon stroke. So the dark mode
- *    lifts the red until it reads as 朱红 while still passing 4.5:1 as text.
+ *    A deep 朱红 (#b3402a) on #12171d would measure only ~2.6:1 — fine as a
+ *    fill under white text, unusable as text or as a thin icon stroke. So the
+ *    dark mode lifts the red until it reads as 朱红 while still passing 4.5:1
+ *    as text.
  *
- * 2. --jin-text-on-accent is dark, not light, because the dark-mode fill is now
- *    light enough that dark text on it is the readable pairing.
+ * 2. --jin-text-on-accent is dark, not light, because the dark-mode fill is
+ *    now light enough that dark text on it is the readable pairing.
  *
- * The 金 ground weave is brighter here than in light mode: on a dark cloth the
- * pattern reads as thread *in* the fabric, which is the intended effect.
+ * Everyday borders are neutral thread lines at low alpha — the warp and weft
+ * you only notice when you look for them. Gold appears where it carries
+ * meaning: strong boundaries and the focus ring.
  *
  * ---
  * Original work: this theme is the library's own visual identity, not drawn from the
@@ -24,57 +27,58 @@
 :root[data-jin-style='jin'][data-jin-mode='dark'] {
   color-scheme: dark;
 
-  /* surface & text — 玄青 ground, 米白 text */
-  --jin-bg: #101a22;
-  --jin-surface: #16232c;
-  --jin-surface-raised: #1c2c37;
-  --jin-surface-sunken: #0c141b;
-  --jin-surface-translucent: #16232c;
-  --jin-scrim: rgba(4, 8, 12, 0.66);
-  --jin-text: #f4ebd8;
-  --jin-text-muted: #c3b191;
+  /* surface & text — 玄青 ground, near-neutral light text (not sepia) */
+  --jin-bg: #12171d;
+  --jin-surface: #171e26;
+  --jin-surface-raised: #1e2731;
+  --jin-surface-sunken: #0d1217;
+  --jin-surface-translucent: #171e26;
+  --jin-scrim: rgba(3, 6, 9, 0.62);
+  --jin-text: #eceae4;
+  --jin-text-muted: #b0aba0;
   /* Lifted so it still clears 4.5:1 on --jin-surface-raised, not just on the
-     page background — raised panels are where muted text usually lands. */
-  --jin-text-subtle: #a4967e;
+    page background — raised panels are where muted text usually lands. */
+  --jin-text-subtle: #969084;
   /* The fill is a lifted red, so dark text is the readable pairing. */
   --jin-text-on-accent: #1a1206;
 
-  /* border & shape — 金线 */
-  --jin-border-color: rgba(201, 162, 39, 0.34);
-  --jin-border-color-strong: rgba(213, 178, 74, 0.62);
+  /* border & shape — 经纬线 thread lines; 金线 only on strong boundaries */
+  --jin-border-color: rgba(236, 234, 228, 0.14);
+  --jin-border-color-strong: rgba(216, 181, 74, 0.6);
   --jin-border-width: 1px;
   --jin-border-style: solid;
-  --jin-radius-sm: 3px;
-  --jin-radius-md: 5px;
-  --jin-radius-lg: 7px;
-  --jin-radius-full: 6px;
-  --jin-control-height-sm: 28px;
-  --jin-control-height-md: 34px;
-  --jin-control-height-lg: 42px;
+  --jin-radius-sm: 6px;
+  --jin-radius-md: 8px;
+  --jin-radius-lg: 12px;
+  --jin-radius-full: 999px;
+  --jin-control-height-sm: 30px;
+  --jin-control-height-md: 36px;
+  --jin-control-height-lg: 44px;
 
-  /* depth — the raised surface catches light along its top edge, like a fold */
-  --jin-elevation-1: 0 1px 0 rgba(244, 235, 216, 0.05) inset, 0 2px 6px rgba(0, 0, 0, 0.4);
-  --jin-elevation-2: 0 1px 0 rgba(244, 235, 216, 0.07) inset, 0 6px 16px rgba(0, 0, 0, 0.46);
-  --jin-elevation-3: 0 1px 0 rgba(244, 235, 216, 0.08) inset, 0 12px 28px rgba(0, 0, 0, 0.52);
-  --jin-elevation-4: 0 1px 0 rgba(244, 235, 216, 0.1) inset, 0 20px 48px rgba(0, 0, 0, 0.6);
-  --jin-shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(244, 235, 216, 0.05);
+  /* depth — clean diffuse shadows on dark cloth, no top-edge highlight */
+  --jin-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --jin-elevation-2: 0 2px 8px rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.3);
+  --jin-elevation-3: 0 4px 14px rgba(0, 0, 0, 0.45), 0 14px 32px rgba(0, 0, 0, 0.35);
+  --jin-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 56px rgba(0, 0, 0, 0.45);
+  --jin-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
   /* No glass, no neon: matte woven silk only. */
   --jin-blur: 0px;
+  /* 丝光: a whisper of light from above, then the cloth falls away. */
   --jin-surface-gradient: linear-gradient(
     180deg,
-    rgba(244, 235, 216, 0.07) 0%,
-    rgba(244, 235, 216, 0) 44%,
-    rgba(0, 0, 0, 0.22) 100%
+    rgba(236, 234, 228, 0.04) 0%,
+    rgba(236, 234, 228, 0) 40%,
+    rgba(0, 0, 0, 0.18) 100%
   );
   /* 地纹: the warp/weft grid, reading as thread woven into the dark cloth. */
-  --jin-surface-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cg fill='none' stroke='%23d5b24a' stroke-opacity='.07'%3E%3Cpath d='M0 .5h8M0 4.5h8'/%3E%3Cpath d='M.5 0v8M4.5 0v8'/%3E%3C/g%3E%3C/svg%3E");
+  --jin-surface-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cg fill='none' stroke='%23eceae4' stroke-opacity='.05'%3E%3Cpath d='M0 .5h8M0 4.5h8'/%3E%3Cpath d='M.5 0v8M4.5 0v8'/%3E%3C/g%3E%3C/svg%3E");
 
   /* status — lifted for text legibility on a dark ground (see the header note) */
   --jin-accent: #e0705a;
   --jin-accent-hover: #ec846f;
   /* The pressed state deepens the fill. It is used only as a fill (the primary
-     button's background), so what must stay readable is --jin-text-on-accent
-     over it — 4.87:1 — rather than this value against the page. */
+    button's background), so what must stay readable is --jin-text-on-accent
+    over it — 4.87:1 — rather than this value against the page. */
   --jin-accent-active: #d1614b;
   --jin-danger: #e2706f;
   --jin-warning: #dda23f;
@@ -90,7 +94,7 @@
   --jin-info-bg: rgba(70, 130, 170, 0.18);
 
   /* focus — 金, bright enough to read against the dark cloth */
-  --jin-focus-ring-color: #e3c567;
+  --jin-focus-ring-color: #d8b54a;
   --jin-focus-ring-width: 2px;
   --jin-focus-ring-offset: 2px;
 
@@ -117,7 +121,7 @@
   --jin-font-weight-medium: 500;
   --jin-font-weight-bold: 700;
   --jin-line-height: 1.55;
-  --jin-letter-spacing: 0.012em;
+  --jin-letter-spacing: 0.01em;
   --jin-text-transform: none;
 
   /* density */

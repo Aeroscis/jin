@@ -8,14 +8,19 @@
  *
  * Concretely, in this file:
  *   - a limited palette: 朱红 accent, 石青 info, 石绿 success, 琥珀 warning,
- *     and 金 reserved for focus, boundaries and emphasis (never body text)
- *   - 金线 (gold thread): every border is a 1px gold/bronze filament, never a
- *     heavy outline. --jin-border-width stays at 1px.
- *   - 丝光 (silk sheen): soft directional light from above, expressed as a
- *     restrained top-lit gradient plus an inset highlight on raised surfaces.
- *   - 地纹 (ground weave): a warp/weft grid at very low alpha, used only where
- *     the prompt allows patterns — background and empty states, never content.
- *   - restrained radii (3/5/7px) and micro-emboss instead of drop shadows.
+ *     and 金 reserved for focus, strong boundaries and emphasis (never body
+ *     text, never every border)
+ *   - 绢白 ground: a modern neutral surface with only a hint of silk warmth —
+ *     not parchment. The cloth is felt, not seen.
+ *   - 经纬线 borders: everyday borders are neutral thread lines; 金线 (gold)
+ *     appears only on --jin-border-color-strong and the focus ring, where it
+ *     actually means something.
+ *   - 丝光 (silk sheen): an almost invisible top-lit gradient. No emboss, no
+ *     inset highlight lines — depth comes from clean diffuse shadows.
+ *   - 地纹 (ground weave): a warp/weft grid at very low alpha, drawn in ink,
+ *     used only where the prompt allows patterns — background and empty
+ *     states, never content.
+ *   - modern radii (6/8/12px, full = pill).
  *
  * Every value here is verified for contrast by tools/check_contrast.py.
  *
@@ -26,68 +31,69 @@
 :root[data-jin-style='jin'] {
   color-scheme: light;
 
-  /* surface & text — 宣纸 ground, 墨 text */
-  --jin-bg: #f1ece0;
-  --jin-surface: #f8f4ea;
-  --jin-surface-raised: #fffcf5;
-  --jin-surface-sunken: #e8e1d2;
-  --jin-surface-translucent: #fffcf5;
-  --jin-scrim: rgba(34, 29, 22, 0.42);
-  --jin-text: #221d16;
-  --jin-text-muted: #5c5344;
-  --jin-text-subtle: #695f50;
-  --jin-text-on-accent: #fff6e5;
+  /* surface & text — 绢白 ground, 墨 text */
+  --jin-bg: #f5f4f1;
+  --jin-surface: #faf9f6;
+  --jin-surface-raised: #ffffff;
+  --jin-surface-sunken: #edebe6;
+  --jin-surface-translucent: #ffffff;
+  --jin-scrim: rgba(26, 24, 20, 0.45);
+  --jin-text: #22201c;
+  --jin-text-muted: #5f5b53;
+  --jin-text-subtle: #6a665e;
+  --jin-text-on-accent: #ffffff;
 
-  /* border & shape — 金线 filaments, restrained radii */
-  --jin-border-color: rgba(74, 60, 36, 0.62);
-  --jin-border-color-strong: #8a6a12;
+  /* border & shape — 经纬线 thread lines, gold kept for strong boundaries */
+  --jin-border-color: rgba(34, 32, 28, 0.15);
+  --jin-border-color-strong: #a5831c;
   --jin-border-width: 1px;
   --jin-border-style: solid;
-  --jin-radius-sm: 3px;
-  --jin-radius-md: 5px;
-  --jin-radius-lg: 7px;
-  --jin-radius-full: 6px;
-  --jin-control-height-sm: 28px;
-  --jin-control-height-md: 34px;
-  --jin-control-height-lg: 42px;
+  --jin-radius-sm: 6px;
+  --jin-radius-md: 8px;
+  --jin-radius-lg: 12px;
+  --jin-radius-full: 999px;
+  --jin-control-height-sm: 30px;
+  --jin-control-height-md: 36px;
+  --jin-control-height-lg: 44px;
 
-  /* depth — micro-emboss and a top-lit edge, never a heavy drop shadow */
-  --jin-elevation-1: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(58, 45, 20, 0.1);
-  --jin-elevation-2: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 2px 8px rgba(58, 45, 20, 0.12);
-  --jin-elevation-3: 0 1px 0 rgba(255, 255, 255, 0.75) inset, 0 8px 20px rgba(58, 45, 20, 0.14);
-  --jin-elevation-4: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 16px 40px rgba(58, 45, 20, 0.18);
-  --jin-shadow-inset: inset 0 1px 2px rgba(58, 45, 20, 0.14), inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+  /* depth — clean diffuse shadows, no emboss, no inset highlight lines */
+  --jin-elevation-1: 0 1px 2px rgba(26, 24, 20, 0.05);
+  --jin-elevation-2: 0 2px 6px rgba(26, 24, 20, 0.06), 0 6px 16px rgba(26, 24, 20, 0.06);
+  --jin-elevation-3: 0 4px 12px rgba(26, 24, 20, 0.08), 0 12px 28px rgba(26, 24, 20, 0.08);
+  --jin-elevation-4: 0 8px 20px rgba(26, 24, 20, 0.1), 0 20px 48px rgba(26, 24, 20, 0.12);
+  --jin-shadow-inset: inset 0 1px 2px rgba(26, 24, 20, 0.07);
   /* No glass: 玻璃拟态 is explicitly not part of this theme. */
   --jin-blur: 0px;
+  /* 丝光: light from above, felt rather than seen. */
   --jin-surface-gradient: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(255, 255, 255, 0) 46%,
-    rgba(95, 76, 40, 0.05) 100%
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(34, 32, 28, 0.03) 100%
   );
-  /* 地纹: a warp/weft grid, far too faint to compete with content. */
-  --jin-surface-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cg fill='none' stroke='%238a6a12' stroke-opacity='.05'%3E%3Cpath d='M0 .5h8M0 4.5h8'/%3E%3Cpath d='M.5 0v8M4.5 0v8'/%3E%3C/g%3E%3C/svg%3E");
+  /* 地纹: warp/weft grid drawn in ink, far too faint to compete with content. */
+  --jin-surface-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cg fill='none' stroke='%2322201c' stroke-opacity='.05'%3E%3Cpath d='M0 .5h8M0 4.5h8'/%3E%3Cpath d='M.5 0v8M4.5 0v8'/%3E%3C/g%3E%3C/svg%3E");
 
   /* status — 朱红 primary, 石青 info, 石绿 success, 琥珀 warning */
-  --jin-accent: #a83a29;
+  --jin-accent: #b3402a;
   /* Hover stays legible as text on the page background, not only on panels. */
-  --jin-accent-hover: #b8422f;
-  --jin-accent-active: #8e2e1e;
-  --jin-danger: #9e3139;
+  --jin-accent-hover: #c24a33;
+  --jin-accent-active: #9c3523;
+  --jin-danger: #a8323c;
   --jin-warning: #96601a;
   --jin-success: #3f7a4c;
-  --jin-info: #2e5f80;
-  --jin-danger-text: #8b2d2d;
+  --jin-info: #2e6386;
+  --jin-danger-text: #8c2a2f;
   --jin-warning-text: #7a4c12;
   --jin-success-text: #33653f;
-  --jin-info-text: #27506b;
-  --jin-danger-bg: #fbedea;
-  --jin-warning-bg: #faf2e2;
-  --jin-success-bg: #edf5ee;
-  --jin-info-bg: #eaf1f6;
+  --jin-info-text: #28536e;
+  --jin-danger-bg: #faeceb;
+  --jin-warning-bg: #faf3e1;
+  --jin-success-bg: #ecf4ee;
+  --jin-info-bg: #e9f1f6;
 
   /* focus — 金, declared on purpose and never derived from the accent */
-  --jin-focus-ring-color: #8a6a12;
+  --jin-focus-ring-color: #9a7a14;
   --jin-focus-ring-width: 2px;
   --jin-focus-ring-offset: 2px;
 
@@ -114,11 +120,11 @@
   --jin-font-weight-medium: 500;
   --jin-font-weight-bold: 700;
   --jin-line-height: 1.55;
-  --jin-letter-spacing: 0.012em;
+  --jin-letter-spacing: 0.01em;
   --jin-text-transform: none;
 
   /* density — a 4px rhythm; density is expressed by control heights, not by
-     squeezing the spacing scale (that would cost touch targets) */
+    squeezing the spacing scale (that would cost touch targets) */
   --jin-space-1: 4px;
   --jin-space-2: 8px;
   --jin-space-3: 12px;
