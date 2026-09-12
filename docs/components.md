@@ -385,9 +385,10 @@ Escape closes it and focus returns to the trigger.
 
 ### JinContextMenu
 
-Right-click, long-press, or **Shift+F10 / the Menu key** when focused — a context menu that ignores
-the keyboard is unusable. The menu is clamped into the viewport when the pointer is near an edge.
-Emits `select`.
+Right-click, or **Shift+F10 / the Menu key** when focused — a context menu that ignores the
+keyboard is unusable. Long-press is **not implemented** (the wrapper listens to `contextmenu` and
+`keydown` only), so touch users currently have no route into this menu. The menu is clamped into
+the viewport when the pointer is near an edge. Emits `select`.
 
 ### JinBreadcrumb
 

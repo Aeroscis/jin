@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * JinContextMenu — right-click (or long-press) menu anchored to the pointer.
+ * JinContextMenu — right-click menu anchored to the pointer.
  *
  * It reuses JinMenu for navigation; the only new part is "where did the
  * pointer land", which still goes through the shared positioning module by
- * feeding it a synthetic zero-size anchor.
+ * feeding it a synthetic zero-size anchor. Long-press is not implemented yet:
+ * touch users have no route into this menu.
  */
 import { computed, nextTick, ref, watch } from 'vue'
 import JinMenu from './JinMenu.vue'
@@ -18,7 +19,7 @@ const props = withDefaults(
     items: MenuEntry[]
     ariaLabel?: string
     disabled?: boolean
-    /** Also open on long-press / context-menu key. */
+    /** Open on the context-menu key / Shift+F10 when the wrapper is focused. */
     keyboardAccessible?: boolean
   }>(),
   { ariaLabel: '', disabled: false, keyboardAccessible: true },
