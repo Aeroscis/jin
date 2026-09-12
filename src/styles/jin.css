@@ -584,7 +584,16 @@
   opacity: 0.85;
 }
 
-/* ---------------------------------------------------------------- overlays */
+/* ---------------------------------------------------------------- overlays
+ *
+ * A surface that floats over content — menu, popover, modal, drawer, toast —
+ * takes --jin-surface-translucent instead of --jin-surface-raised, and pairs it
+ * with --jin-blur. A style that is not glass sets the two surface values equal
+ * and the blur to 0px, so nothing changes for it; a glass style has no other
+ * place to express its material. The tooltip is the exception: it is painted in
+ * --jin-text, and translucent ink is unreadable ink. The blur carries its
+ * -webkit- prefix because the stylesheet is not run through a post-processor.
+ */
 
 .jin-modal,
 .jin-drawer {
@@ -607,8 +616,10 @@
   flex-direction: column;
   width: 100%;
   max-height: calc(100vh - var(--jin-space-8, 48px));
-  background: var(--jin-surface-raised, #fff);
+  background: var(--jin-surface-translucent, var(--jin-surface-raised, #fff));
   background-image: var(--jin-surface-gradient, none);
+  -webkit-backdrop-filter: blur(var(--jin-blur, 0px));
+  backdrop-filter: blur(var(--jin-blur, 0px));
   color: var(--jin-text, #101828);
   border: var(--jin-border-width, 1px) var(--jin-border-style, solid) var(--jin-border-color, #d3dae7);
   border-radius: var(--jin-radius-lg, 14px);
@@ -696,8 +707,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--jin-surface-raised, #fff);
+  background: var(--jin-surface-translucent, var(--jin-surface-raised, #fff));
   background-image: var(--jin-surface-gradient, none);
+  -webkit-backdrop-filter: blur(var(--jin-blur, 0px));
+  backdrop-filter: blur(var(--jin-blur, 0px));
   color: var(--jin-text, #101828);
   border: var(--jin-border-width, 1px) var(--jin-border-style, solid) var(--jin-border-color, #d3dae7);
   box-shadow: var(--jin-elevation-4, none);
@@ -755,8 +768,10 @@
   z-index: var(--jin-z-dropdown, 1000);
   min-width: var(--jin-space-8, 48px);
   max-width: min(90vw, calc(var(--jin-space-8, 48px) * 8));
-  background: var(--jin-surface-raised, #fff);
+  background: var(--jin-surface-translucent, var(--jin-surface-raised, #fff));
   background-image: var(--jin-surface-gradient, none);
+  -webkit-backdrop-filter: blur(var(--jin-blur, 0px));
+  backdrop-filter: blur(var(--jin-blur, 0px));
   color: var(--jin-text, #101828);
   border: var(--jin-border-width, 1px) var(--jin-border-style, solid) var(--jin-border-color, #d3dae7);
   border-radius: var(--jin-radius-md, 10px);
@@ -884,8 +899,10 @@
   width: max-content;
   max-width: min(90vw, calc(var(--jin-space-8, 48px) * 8));
   padding: var(--jin-space-3, 12px) var(--jin-space-4, 16px);
-  background: var(--jin-surface-raised, #fff);
+  background: var(--jin-surface-translucent, var(--jin-surface-raised, #fff));
   background-image: var(--jin-surface-gradient, none);
+  -webkit-backdrop-filter: blur(var(--jin-blur, 0px));
+  backdrop-filter: blur(var(--jin-blur, 0px));
   color: var(--jin-text, #101828);
   border: var(--jin-border-width, 1px) var(--jin-border-style, solid) var(--jin-border-color, #d3dae7);
   border-left-width: calc(var(--jin-border-width, 1px) * 2);
@@ -1824,8 +1841,10 @@
   padding: var(--jin-space-1, 4px);
   list-style: none;
   margin: 0;
-  background: var(--jin-surface-raised, #fff);
+  background: var(--jin-surface-translucent, var(--jin-surface-raised, #fff));
   background-image: var(--jin-surface-gradient, none);
+  -webkit-backdrop-filter: blur(var(--jin-blur, 0px));
+  backdrop-filter: blur(var(--jin-blur, 0px));
   color: var(--jin-text, #101828);
   border: var(--jin-border-width, 1px) var(--jin-border-style, solid) var(--jin-border-color, #d3dae7);
   border-radius: var(--jin-radius-md, 10px);

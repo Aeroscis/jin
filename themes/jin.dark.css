@@ -32,7 +32,10 @@
   --jin-surface: #171e26;
   --jin-surface-raised: #1e2731;
   --jin-surface-sunken: #0d1217;
-  --jin-surface-translucent: #171e26;
+  /* Floating layers read this one. Jin is not a glass style, so it repeats the
+     raised panel: the overlays keep the exact colour they had before the token
+     became load-bearing. */
+  --jin-surface-translucent: #1e2731;
   --jin-scrim: rgba(3, 6, 9, 0.62);
   --jin-text: #eceae4;
   --jin-text-muted: #b0aba0;
