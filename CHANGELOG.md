@@ -23,6 +23,44 @@ downstream an afternoon (see 0.1.1).
 
 Nothing yet. Add entries here as work lands; they move under the next version when it is cut.
 
+## [0.2.0] — 2026-09-12
+
+### Changed
+
+- **The package is `@aeroscis/jin`** (was `jin-ui`). Scoped because npm already has both `jin` and
+  `jin-ui`. There is still no registry release, so install from a checkout, an `npm pack` tarball or
+  a git tag — [docs/consuming.md](docs/consuming.md) has all three.
+- **The base stylesheet is an import the application writes**: `import '@aeroscis/jin/styles.css'`.
+  It used to be pulled in by the library's entry, where a consumer's bundler could drop it silently:
+  the controls still rendered, unstyled, with nothing reported anywhere. The plugin now warns once,
+  by name, when the stylesheet's marker is absent.
+- **An installed package resolves to `dist/`** (`main`/`module`/`types` and the default `exports`
+  conditions), which `npm install` inside the library builds through `prepare`. A linked checkout
+  keeps reading sources through the `source` condition — `resolve.conditions` in Vite and
+  `customConditions` in the consuming `tsconfig.json` — which replaces the old alias list.
+
+### Added
+
+- `npm run smoke`: builds the library, packs it, extracts the tarball into a scratch project as a
+  real directory, and builds that project with no aliases and no `source` condition — asserting that
+  the stylesheet, the themes and the declarations arrive and type-check. Part of `prepublishOnly`.
+- A mechanical check that the stylesheet declares the custom property the plugin reads
+  (`tools/check_tokens.py`). The two names drifting apart is invisible in either file alone — the
+  plugin just goes on reporting a missing stylesheet while it is loaded.
+- `LICENSE` (MIT), and `CREDITS.md` and this file in the published tarball.
+
+### Docs
+
+- `docs/consuming.md` rewritten: three install paths, the two `source`-condition settings, and a
+  symptom table that now includes the unstyled-controls case.
+- README install and packaging sections; every `jin-ui` specifier in the docs and the Gallery
+  renamed.
+
+### Tests
+
+- `tests/stylesheet.spec.ts`: the marker read and the warning — quiet when the sheet is loaded,
+  naming the exact import when it is not, waiting for `load`, silent in test environments.
+
 ## [0.1.1] — 2026-09-12
 
 ### Fixed

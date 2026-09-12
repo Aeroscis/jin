@@ -306,7 +306,8 @@ answers — the built one, and the `source` one a linked checkout asks for:
 The stylesheet ships as written rather than pre-built: the consumer's bundler minifies it either
 way, and one file that is the same in both modes cannot drift from itself. `npm pack` includes
 `dist/` (ESM, declarations, source maps), `src/` (the stylesheet, and the sources the maps point
-at), `themes/`, `contracts/`, the README, the credits and the licence — 148 files, 239 kB packed.
+at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence — 149 files,
+246 kB packed at 0.2.0.
 
 ### Publishing
 

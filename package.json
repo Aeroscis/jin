@@ -1,6 +1,6 @@
 {
   "name": "@aeroscis/jin",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "description": "Jin (锦) — a token-driven Vue 3 control library. Style axes: data-jin-style + data-jin-mode.",
   "license": "MIT",
@@ -31,7 +31,8 @@
     "themes",
     "contracts",
     "README.md",
-    "CREDITS.md"
+    "CREDITS.md",
+    "CHANGELOG.md"
   ],
   "main": "./dist/jin.js",
   "module": "./dist/jin.js",
