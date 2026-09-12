@@ -21,6 +21,10 @@ downstream an afternoon (see 0.1.1).
 
 ## [Unreleased]
 
+Nothing yet. Add entries here as work lands; they move under the next version when it is cut.
+
+## [0.3.0] — 2026-09-12
+
 ### Added
 
 - **Six more styles**, each with a light and a dark file: `glassmorphism`, `neumorphism`,

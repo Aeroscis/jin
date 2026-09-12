@@ -6,7 +6,7 @@ disagree, they win.
 
 ## What this is
 
-Jin (锦) — a token-driven Vue 3 control library, published as `@aeroscis/jin` (0.2.0, MIT, peer
+Jin (锦) — a token-driven Vue 3 control library, published as `@aeroscis/jin` (0.3.0, MIT, peer
 `vue ^3.5`). 36 components, 12 pure decision modules, 9 DOM composables, 175 tests. Two ideas carry
 everything:
 
