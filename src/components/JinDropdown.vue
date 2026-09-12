@@ -17,7 +17,7 @@ const props = withDefaults(
     disabled?: boolean
     /** Keep the menu open after choosing an item. */
     keepOpen?: boolean
-    /** Show the default chevron affordance. */
+    /** Declared but not implemented — the default trigger draws no chevron yet. */
     chevron?: boolean
   }>(),
   { placement: 'bottom-end', ariaLabel: '', disabled: false, keepOpen: false, chevron: true },

@@ -380,8 +380,9 @@ label. Emits `select`, `open-change`, `close`.
 ### JinDropdown
 
 A menu behind a trigger. `items`, `placement` (default `'bottom-end'`), `ariaLabel`, `disabled`,
-`keepOpen`, plus a `#trigger` slot. Enter/Space/ArrowDown open it and move focus to the first row;
-Escape closes it and focus returns to the trigger.
+`keepOpen`, plus a `#trigger` slot. `chevron` is **declared but not implemented** — the default
+trigger draws no chevron. Enter/Space/ArrowDown open it and move focus to the first row; Escape
+closes it and focus returns to the trigger.
 
 ### JinContextMenu
 
