@@ -195,6 +195,7 @@ Same contract as the modal, with `side: 'top' | 'right' | 'bottom' | 'left'` and
 | `offset`, `flip`, `shift`, `arrow` | | Flip and shift default on |
 | `closeOnEsc`, `closeOnOutside` | `boolean` | |
 | `ignoreAnchor` | `boolean` | Clicks on the trigger do not dismiss (default `true`) |
+| `lazy` | `boolean` | **Declared but not implemented** — the panel is always mounted while closed |
 
 This is the substrate for the dropdown, select, tooltip and popconfirm — none of them re-solve
 anchoring.

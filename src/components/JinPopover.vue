@@ -32,7 +32,9 @@ const props = withDefaults(
     ignoreAnchor?: boolean
     ariaLabel?: string
     role?: string
-    /** Keep the popover mounted while closed (needed for measuring). */
+    /**
+     * Declared but not implemented: the panel is always mounted while closed.
+     */
     lazy?: boolean
   }>(),
   {
