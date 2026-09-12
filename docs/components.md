@@ -478,7 +478,8 @@ not part of this API.
 
 **Decoration, two routes.** A generic `tone` prop (`default` / `muted` / `warning` / `danger`) which
 the library translates into colour without asking why, and a scoped `#item` slot for everything
-else. Neither route requires the library to understand the data.
+else. `TreeNode.icon` is opaque application data: the default row does **not** draw it, so a node
+icon needs the `#item` slot. Neither route requires the library to understand the data.
 
 **Keyboard.** Up/Down move, Right expands or steps into a branch, Left collapses or moves to the
 parent, Home/End jump, `*` expands every loaded branch, and typing jumps to a matching label. The
