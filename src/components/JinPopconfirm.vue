@@ -4,7 +4,7 @@
  * Keyboard reachable: the confirm button receives focus on open, Esc cancels,
  * and focus returns to the trigger.
  */
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import JinIcon from './JinIcon.vue'
 import JinButton from './JinButton.vue'
 import { useOverlay } from '../composables/useOverlay'
@@ -130,6 +130,14 @@ watch(isOpen, (open, wasOpen) => {
     overlayId.value = null
   }
 }, { immediate: true })
+
+// A `v-if` host unmounts an open popconfirm without a closing edge; without
+// this the entry would stay in the shared stack and misroute the next Escape.
+onBeforeUnmount(() => {
+  if (!overlayId.value) return
+  overlay.unregister(overlayId.value)
+  overlayId.value = null
+})
 </script>
 
 <template>

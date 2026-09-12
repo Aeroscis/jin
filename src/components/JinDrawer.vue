@@ -3,7 +3,7 @@
  * JinDrawer — edge-anchored panel for four sides and four width steps.
  * Same overlay contract as the modal: trap, Esc, scrim, focus return.
  */
-import { computed, ref, useSlots, watch, type CSSProperties } from 'vue'
+import { computed, onBeforeUnmount, ref, useSlots, watch, type CSSProperties } from 'vue'
 import JinIcon from './JinIcon.vue'
 import { createId } from '../core/id'
 import { useT } from '../composables/useT'
@@ -102,6 +102,15 @@ watch(
   },
   { immediate: true },
 )
+
+// See JinModal: a `v-if` host can unmount the drawer while it is open, and the
+// watch above would never run its closing branch — leaving the shared scrim up.
+onBeforeUnmount(() => {
+  if (!overlayId.value) return
+  overlay.unregister(overlayId.value)
+  overlayId.value = null
+  if (!props.noScrim) overlay.hideScrim()
+})
 
 const style = computed<CSSProperties>(() => {
   const z = overlay.entryZIndex(overlayId.value)

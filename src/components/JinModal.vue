@@ -7,7 +7,7 @@
  * Content is teleported into the library's single portal container. The scrim
  * is that stack's shared element, so stacked modals never double-darken.
  */
-import { computed, ref, useSlots, watch, type CSSProperties } from 'vue'
+import { computed, onBeforeUnmount, ref, useSlots, watch, type CSSProperties } from 'vue'
 import JinIcon from './JinIcon.vue'
 import { createId } from '../core/id'
 import { useT } from '../composables/useT'
@@ -121,6 +121,20 @@ watch(
   },
   { immediate: true },
 )
+
+/*
+ * A host that renders the dialog behind `v-if` unmounts it while it is still
+ * open: the watch above never sees the closing edge, so its scrim would stay up
+ * and swallow every pointer event in the host. Same cleanup as a normal close.
+ * Guarded on overlayId so a dialog that already closed normally cannot hide the
+ * scrim of another one that is still open.
+ */
+onBeforeUnmount(() => {
+  if (!overlayId.value) return
+  overlay.unregister(overlayId.value)
+  overlayId.value = null
+  if (!props.noScrim) overlay.hideScrim()
+})
 
 const style = computed<CSSProperties>(() => {
   const z = overlay.entryZIndex(overlayId.value)

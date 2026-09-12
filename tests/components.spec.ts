@@ -8,6 +8,8 @@ import JinTree from '../src/components/JinTree.vue'
 import JinField from '../src/components/JinField.vue'
 import JinTextField from '../src/components/JinTextField.vue'
 import JinModal from '../src/components/JinModal.vue'
+import JinDrawer from '../src/components/JinDrawer.vue'
+import JinPopover from '../src/components/JinPopover.vue'
 import JinPopconfirm from '../src/components/JinPopconfirm.vue'
 import JinProgress from '../src/components/JinProgress.vue'
 import JinTabs from '../src/components/JinTabs.vue'
@@ -477,6 +479,26 @@ describe('JinPopconfirm', () => {
   })
 })
 
+describe('JinPopover', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+    document.querySelectorAll('.jin-portal').forEach((node) => node.remove())
+  })
+
+  it('releases its stack entry when an open popover is unmounted', async () => {
+    // Regression: a `v-if` host unmounts the popover without a closing edge,
+    // and the entry stayed in the shared stack — offsetting the z-index of
+    // every later overlay and routing the next Escape to a popover that is gone.
+    const host = withPlugin(JinPopover, { props: { modelValue: true }, attachTo: document.body })
+    await nextTick()
+    expect(JinUI.overlay?.stack.count()).toBe(1)
+
+    host.unmount()
+    await nextTick()
+    expect(JinUI.overlay?.stack.count()).toBe(0)
+  })
+})
+
 describe('JinModal', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
@@ -526,6 +548,40 @@ describe('JinModal', () => {
     await nextTick()
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(document.querySelector('.jin-modal__panel')?.getAttribute('role')).toBe('alertdialog')
+  })
+
+  it('lowers the shared scrim when a v-if host unmounts an open dialog', async () => {
+    // Regression: the closing edge never runs for an unmounted dialog, so the
+    // scrim stayed up and swallowed every pointer event in the host.
+    const host = withPlugin(JinModal, { props: { modelValue: true }, attachTo: document.body })
+    await nextTick()
+    expect(document.querySelector<HTMLElement>('.jin-scrim')?.style.display).toBe('block')
+
+    host.unmount()
+    await nextTick()
+    const scrim = document.querySelector<HTMLElement>('.jin-scrim')
+    expect(scrim?.getAttribute('data-jin-visible')).toBeNull()
+    expect(scrim?.style.display).toBe('none')
+  })
+})
+
+describe('JinDrawer', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+    document.querySelectorAll('.jin-portal').forEach((node) => node.remove())
+  })
+
+  it('lowers the shared scrim when a v-if host unmounts an open drawer', async () => {
+    // The drawer carries its own copy of the modal's cleanup.
+    const host = withPlugin(JinDrawer, { props: { modelValue: true }, attachTo: document.body })
+    await nextTick()
+    expect(document.querySelector<HTMLElement>('.jin-scrim')?.style.display).toBe('block')
+
+    host.unmount()
+    await nextTick()
+    const scrim = document.querySelector<HTMLElement>('.jin-scrim')
+    expect(scrim?.getAttribute('data-jin-visible')).toBeNull()
+    expect(scrim?.style.display).toBe('none')
   })
 })
 

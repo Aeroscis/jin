@@ -7,7 +7,7 @@
  * This is also the substrate for dropdown menus, selects, tooltips and
  * popconfirms: they all render into a popover rather than re-solving anchoring.
  */
-import { computed, ref, watch, type CSSProperties } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type CSSProperties } from 'vue'
 import { useOverlay } from '../composables/useOverlay'
 import { usePositioning } from '../composables/usePositioning'
 import { useDismissable } from '../composables/useDismissable'
@@ -128,6 +128,14 @@ watch(isOpen, (open, wasOpen) => {
     overlayId.value = null
   }
 }, { immediate: true })
+
+// A `v-if` host unmounts an open popover without a closing edge; without this
+// the entry would stay in the shared stack and misroute the next Escape.
+onBeforeUnmount(() => {
+  if (!overlayId.value) return
+  overlay.unregister(overlayId.value)
+  overlayId.value = null
+})
 
 watch([() => props.placement, resolvedAnchor], () => {
   if (isOpen.value) scheduleUpdate()
