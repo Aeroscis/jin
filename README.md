@@ -174,23 +174,30 @@ Two orthogonal axes, set as attributes on `<html>`:
 
 | | |
 | --- | --- |
-| `data-jin-style` | Which visual language: `jin` (default), `dimensional-layering`, `brutalism`, … |
-| `data-jin-mode` | `dark` (Jin's signature 玄锦) or `light` (素锦) |
+| `data-jin-style` | Which visual language: `jin` (default) plus eight catalogue styles — see the table below |
+| `data-jin-mode` | `dark` (Jin's signature 玄锦) or `light` (素锦); every style ships both |
 
 Each theme file is named `风格[.dark].css` and is **self-contained**: it restates the entire
 contract rather than relying on values left over from another style. Switching a theme is therefore
 just swapping a file — no cascade archaeology.
 
-Two shipped styles, chosen to be opposites so the abstraction is genuinely tested:
+Nine styles ship, and they were chosen to disagree with each other: where one puts its depth in a
+diffuse shadow, the next puts it in a hard offset, in a blur, in an inner shadow, or nowhere at all.
 
-| | Jin · 锦 (default) | Dimensional Layering | Brutalism |
-| --- | --- | --- | --- |
-| Radius | 3 / 5 / 7px | 6 / 10 / 14px | 0 |
-| Elevation | top-lit edge + micro-emboss | four shadow levels | none |
-| Duration | 150 / 200 / 250ms | 120 / 200 / 320ms | 0s |
-| Borders | 1px gold filament | 1px hairline | 3px, always visible |
-| Titles | serif / Songti | same as body | same as body |
-| Texture | warp/weft grid (opt-in) | none | none |
+| Style | Radius (sm / md / lg) | Depth | Borders | Motion (base) |
+| --- | --- | --- | --- | --- |
+| **Jin · 锦** (default) | 6 / 8 / 12px | diffuse shadow + micro-emboss | 1px gold filament | 200ms |
+| **Minimalism & Swiss Style** | 0 | none | 1px hairline | 250ms |
+| **Neumorphism** | 10 / 14 / 18px | light-and-shade shadow pairs + inset | 1px, near the surface | 200ms |
+| **Glassmorphism** | 8 / 14 / 18px | diffuse coloured shadow | 1px light edge | 220ms |
+| **Claymorphism** | 14 / 20 / 24px | thickness offset + soft shadow + inner highlight | 3px, tinted | 240ms, bounce |
+| **Flat Design** | 2 / 4 / 6px | none, declared as `none` | 1px line | 180ms |
+| **Neubrutalism** | 0 | hard offset, no blur radius | 3px black | 150ms |
+| **Brutalism** | 0 | none | 3px, always visible | 0s |
+| **Dimensional Layering** | 6 / 10 / 14px | four shadow levels | 1px hairline | 200ms |
+
+Titles use `--jin-font-display`, which is a second voice in Jin (serif/Songti) and the body face
+everywhere else; texture is Jin's warp/weft grid and `none` in the other eight.
 
 Jin is the house style and the library default; it opens in its signature **dark** mode (玄锦), with a
 light variant (素锦). Its full specification is in [docs/theming.md](docs/theming.md); the one-line
@@ -207,8 +214,11 @@ component namespace, so it is not something to be renamed later.
 **The other styles are implementations of entries in
 [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)**
 (MIT, © 2024 Next Level Builder), a catalogue of searchable UI styles. That catalogue is where the
-requirement to make tokens cover shape, depth and motion — not just colour — came from, and
-`brutalism` and `dimensional-layering` are its first two entries implemented here.
+requirement to make tokens cover shape, depth and motion — not just colour — came from, and eight of
+its entries are implemented here: `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`,
+`claymorphism`, `flat-design`, `neubrutalism`, `brutalism` and `dimensional-layering`. They are the
+catalogue's mainstream styles, and the ones it references most often in its own product and UX
+guidance; [docs/theming.md](docs/theming.md) §8 lists them with the contract axis each one exercises.
 
 We implement the *characteristics* of each style against this library's 80-token contract; no
 stylesheet from that project is copied, because it ships guidance rather than CSS. Every such theme
@@ -306,8 +316,8 @@ answers — the built one, and the `source` one a linked checkout asks for:
 The stylesheet ships as written rather than pre-built: the consumer's bundler minifies it either
 way, and one file that is the same in both modes cannot drift from itself. `npm pack` includes
 `dist/` (ESM, declarations, source maps), `src/` (the stylesheet, and the sources the maps point
-at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence — 149 files,
-246 kB packed at 0.2.0.
+at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence — 161 files,
+256 kB packed (0.2.0 shipped 149 files, 246 kB; the twelve files since are the new styles).
 
 ### Publishing
 
@@ -385,7 +395,9 @@ the script, so relaxing a rule is a visible, reviewable act rather than a quiet 
 ```
 contracts/     the token and string contracts — the two files both applications agree on
 themes/        one file per style[.mode], each defining the whole contract
-               (jin, dimensional-layering, brutalism — each with a .dark variant)
+               (nine styles — jin, minimalism-and-swiss-style, neumorphism,
+               glassmorphism, claymorphism, flat-design, neubrutalism,
+               brutalism, dimensional-layering — each with a .dark variant)
 src/core/      pure TypeScript: positioning, focus, roving tabindex, menu, tree, hotkeys, queue
 src/composables/  the DOM side of those modules, plus the overlay controller
 src/injection/    translation, capabilities, theme, and the plugin that wires them

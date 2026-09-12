@@ -21,7 +21,37 @@ downstream an afternoon (see 0.1.1).
 
 ## [Unreleased]
 
-Nothing yet. Add entries here as work lands; they move under the next version when it is cut.
+### Added
+
+- **Six more styles**, each with a light and a dark file: `glassmorphism`, `neumorphism`,
+  `flat-design`, `claymorphism`, `minimalism-and-swiss-style` and `neubrutalism`. Together with
+  `brutalism` and `dimensional-layering` those are eight entries of the
+  [ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) catalogue
+  implemented against this library's 80-token contract; [docs/theming.md](docs/theming.md) §8 lists
+  them with the contract axis each one exercises, and [CREDITS.md](CREDITS.md) credits them. An
+  application reacts by knowing the new values of `data-jin-style` — nothing else changes for an
+  application that keeps using `jin`, and no existing style id was renamed or removed.
+- **The Gallery's style switcher lists nine styles** and its token panel already reports any token a
+  style leaves undefined, which is the quickest way to look at the new ones.
+
+### Changed
+
+- **Floating layers now take their material from the contract.** Menus, popovers, modal and drawer
+  panels and toasts read `--jin-surface-translucent` and apply
+  `backdrop-filter: blur(var(--jin-blur))`. Both tokens shipped in the 0.2.0 contract and neither
+  was consumed anywhere, so a style could declare a blur amount and a translucent surface that
+  nothing rendered — which is also why a glass style was not expressible before this release.
+  - Rendering is unchanged for every style that sets the two surfaces equal and the blur to `0px`,
+    and [jin.dark.css](themes/jin.dark.css) was adjusted to do exactly that: its translucent value
+    now repeats the raised panel, so its overlays keep the colour they had.
+  - **`dimensional-layering` is the one style whose appearance changes**: it declared a
+    72%-opaque translucent surface and a 10px blur, and its overlays are now the frosted panels
+    those values described.
+  - A style written against 0.2.0 that leaves `--jin-surface-translucent` transparent *and* sets a
+    non-zero `--jin-blur` will see its overlays become translucent on upgrade. That combination was
+    inert before and is the combination this release makes work.
+- `--jin-focus-ring-*` is unchanged and still declared per theme; the blur is written with its
+  `-webkit-` prefix, because the stylesheet is not run through a post-processor.
 
 ## [0.2.0] — 2026-09-12
 

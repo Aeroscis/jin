@@ -15,8 +15,9 @@ everything:
 2. **The token contract is the only style interface.** `contracts/tokens.json` (80 tokens, prefix
    `--jin-`) is enforced mechanically, and every theme restates all of it.
 
-Style and mode are two orthogonal axes, set on `<html>`: `data-jin-style` (`jin`, `brutalism`,
-`dimensional-layering`) and `data-jin-mode` (`light`, `dark`).
+Style and mode are two orthogonal axes, set on `<html>`: `data-jin-style` (`jin` plus eight styles
+implemented from the ui-ux-pro-max-skill catalogue) and `data-jin-mode` (`light`, `dark`). The full
+list, with the contract axis each style exercises, is docs/theming.md §8.
 
 ## Where things are
 
@@ -27,7 +28,7 @@ Style and mode are two orthogonal axes, set on `<html>`: `data-jin-style` (`jin`
 | `src/components/` | The `Jin*.vue` components: render and bind events. |
 | `src/injection/` | Plugin (`JinUI`), theme controller, translation, capabilities, stylesheet warning. |
 | `src/styles/jin.css` | The base stylesheet — an explicit consumer import, never a side effect of the module. |
-| `themes/` | Six files: `jin`, `brutalism`, `dimensional-layering`, each with a `.dark` variant. |
+| `themes/` | 18 files: nine styles (`jin`, `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`, `claymorphism`, `flat-design`, `neubrutalism`, `brutalism`, `dimensional-layering`), each with a `.dark` variant. |
 | `contracts/` | `tokens.json` (80 tokens) and `strings.json` (25 UI strings). |
 | `docs/` | `architecture.md` (why it is shaped this way), `components.md` (API reference), `consuming.md`, `theming.md`. |
 | `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` link, so edits are live there. |
