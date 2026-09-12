@@ -395,8 +395,10 @@ the viewport when the pointer is near an edge. Emits `select`.
 
 ### JinBreadcrumb
 
-`items: BreadcrumbItem[]` (`{ label, href?, onClick?, current? }`), `ariaLabel`, and a `#separator`
-slot. Renders a real `<nav>` + `<ol>`; the last item carries `aria-current="page"`.
+`items: BreadcrumbItem[]` (`{ label, href?, onClick?, current? }`), `ariaLabel`, `maxItems`, and a
+`#separator` slot. Renders a real `<nav>` + `<ol>`; the last item carries `aria-current="page"`.
+
+`maxItems` is **declared but not implemented** — every item is rendered regardless of its value.
 
 ### JinDivider
 
