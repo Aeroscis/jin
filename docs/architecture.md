@@ -32,8 +32,11 @@ Three things fall out of that split:
 1. **The tests run without a browser.** 107 of the 147 tests are pure logic and execute in
    milliseconds under Node.
 2. **There is exactly one implementation of each behaviour.** The modal, drawer, popover, tooltip,
-   popconfirm, dropdown, select and context menu all call the same positioning code. Adding a ninth
-   overlay inherits correct flipping, shifting, focus and dismissal instead of re-solving them.
+   popconfirm, dropdown and select all call the same positioning code. The context menu is the one
+   exception, and an honest one: there is no anchor element to measure, so it takes the pointer's
+   viewport coordinates directly — while still sharing the stack, dismissal and focus modules.
+   Adding a ninth overlay inherits correct flipping, shifting, focus and dismissal instead of
+   re-solving them.
 3. **An application can use the decisions directly.** An application that builds a control the
    library does not ship imports `computePosition` or `navigateTree` and gets the same behaviour as
    the built-in controls, not a lookalike.
@@ -65,6 +68,30 @@ second dialog sets `noScrim` and the first one's scrim stays put.
 **Dismissal is topmost-only.** `handleEscape()` closes the top entry and stops; it does not close
 everything at once. This is what makes Escape feel predictable in a nested flow: review dialog →
 options drawer → both closed one at a time.
+
+**The portal is the viewport.** Every overlay is teleported into one container that the controller
+appends to `<body>`, and that container is anchored to the viewport: `position: fixed; inset: 0`.
+The rule is load-bearing, not cosmetic.
+
+- Its padding box starts at the viewport origin, which is the space overlay coordinates are
+  computed in: `clientX`/`clientY` for the pointer-anchored context menu, `computePosition` output
+  for everything anchored to an element. A container in normal flow instead sits wherever the
+  host's content ends — usually below the fold, since an application shell fills the viewport — and
+  every overlay inside lands that far off. Nothing reports an error when it does: the elements
+  exist, are not `display: none`, and `defaultPrevented` was set as usual; they are simply painted
+  out of view.
+- Children that fill their containing block (the scrim's `inset: 0`) fill the viewport because of
+  it.
+- Because the box covers the whole viewport, it keeps `pointer-events: none` and each direct child
+  restores `auto` — the same split the toast and notification regions use. Otherwise the empty
+  container would swallow input meant for the host.
+- The controller puts no inline layout on it. Inline styles beat the stylesheet, and an inline
+  `position: relative` here used to override the anchoring rule above.
+
+A host must not restyle `.jin-portal`: doing so removes the coordinate contract every overlay is
+built on. Nothing in a jsdom test can catch a violation — there is no layout to measure — so the
+Gallery shell (which fills the viewport, and where the portal is created after `#app`) is the
+browser-side checkpoint, and `tests/portal.spec.ts` pins the stylesheet rule at the source level.
 
 ---
 

@@ -14,9 +14,28 @@
 
 /* ---------------------------------------------------------------- portal */
 
+/*
+ * Anchored to the viewport, not to the document flow. The container is
+ * appended to <body>, so a host whose root element fills the viewport would
+ * otherwise push it below the fold — and every overlay inside positions itself
+ * in viewport coordinates (see usePositioning, and the context menu, which uses
+ * them as-is), which only adds up while this box starts at the viewport origin.
+ * An in-flow container also turns the document scrollable through its
+ * absolutely positioned children.
+ *
+ * pointer-events stay off the box itself — it covers the whole viewport — so the
+ * host underneath keeps receiving input; each overlay turns them back on for
+ * its own subtree.
+ */
 .jin-portal {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 0;
+  pointer-events: none;
+}
+
+.jin-portal > * {
+  pointer-events: auto;
 }
 
 .jin-scrim {

@@ -15,5 +15,9 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.spec.ts'],
     globals: false,
+    // CSS is stubbed away for speed by default. The portal contract test reads
+    // the real sheet (`?raw`) to pin the rule that anchors the portal to the
+    // viewport, so that one file is processed instead of stubbed.
+    css: { include: [/jin\.css/] },
   },
 })

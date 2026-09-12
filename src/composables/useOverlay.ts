@@ -58,9 +58,10 @@ export function createOverlayController(options: CreateOverlayControllerOptions 
     const element = document.createElement('div')
     element.className = PORTAL_CLASS
     element.setAttribute('data-jin-portal', '')
-    // The portal itself is inert layout: children position themselves.
-    element.style.position = 'relative'
-    element.style.zIndex = '0'
+    // Layout belongs to the stylesheet (see .jin-portal): it anchors the box to
+    // the viewport, which is the space every overlay inside measures in. Setting
+    // it inline here instead used to win over that rule and drag the whole
+    // subtree down to wherever the host's flow ended.
     document.body.appendChild(element)
     root.value = element
     return element
