@@ -290,10 +290,17 @@ watch(
   },
 )
 
+// The roving tab stop lives on the active row, so one must exist whenever the
+// tree has a selectable row: a null or stale id leaves every row at
+// tabindex="-1" and the tree with no tab stop at all. Re-anchor only when the
+// current row is gone (application replaced `nodes`, or mutated the array in
+// place), and never reset a row that is still in the list.
 watch(
-  () => props.nodes,
-  () => {
-    activeId.value = rows.value[0]?.id ?? null
+  rows,
+  (next) => {
+    const current = activeId.value
+    if (current !== null && next.some((row) => row.id === current)) return
+    activeId.value = next.find((row) => !row.disabled)?.id ?? null
   },
   { immediate: true },
 )

@@ -178,6 +178,24 @@ describe('navigateTree', () => {
     const collapsed = flattenTree(nodes, createTreeState())
     expect(navigateTree('ArrowLeft', collapsed, 'b')).toEqual({ activeId: 'b', toggle: null })
   })
+
+  it('anchors a missing active row at the first selectable row', () => {
+    // Regression: with activeId null, ArrowRight/Left did nothing, ArrowDown
+    // returned the first row (a dead first press) and ArrowUp jumped to the
+    // last row. Focus alone must be enough to drive the tree.
+    const collapsed = flattenTree(nodes, createTreeState())
+    expect(navigateTree('ArrowRight', collapsed, null)).toEqual({
+      activeId: 'a',
+      toggle: { id: 'a', expanded: true },
+    })
+    expect(navigateTree('ArrowUp', collapsed, null)).toEqual({ activeId: 'a', toggle: null })
+    expect(navigateTree('ArrowDown', collapsed, null)).toEqual({ activeId: 'b', toggle: null })
+    // A stale id (the row is gone) behaves like no active row at all.
+    expect(navigateTree('ArrowRight', collapsed, 'gone')).toEqual({
+      activeId: 'a',
+      toggle: { id: 'a', expanded: true },
+    })
+  })
 })
 
 describe('typeahead and expandable ids', () => {

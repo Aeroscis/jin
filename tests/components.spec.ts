@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createApp, h, nextTick } from 'vue'
+import { createApp, defineComponent, h, nextTick, ref } from 'vue'
 import JinButton from '../src/components/JinButton.vue'
 import JinAlert from '../src/components/JinAlert.vue'
 import JinTree from '../src/components/JinTree.vue'
@@ -380,6 +380,31 @@ describe('JinTree', () => {
     expect(wrapper.text()).not.toContain('Beta one')
     // Inline children satisfy the branch, so nothing is refetched.
     expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps a tab stop when the application mutates the nodes array in place', async () => {
+    // Regression: the active row is the only row with tabindex="0". It was
+    // initialised from a `nodes` identity watcher, so an in-place mutation
+    // left every row at tabindex="-1" and the tree unreachable by Tab.
+    const current = ref<TreeNode[]>([])
+    const Host = defineComponent({ setup: () => () => h(JinTree, { nodes: current.value }) })
+    const wrapper = mount(Host)
+    current.value.push(...nodes)
+    await nextTick()
+
+    const stops = wrapper
+      .findAll('[role="treeitem"]')
+      .filter((row) => row.attributes('tabindex') === '0')
+    expect(stops).toHaveLength(1)
+    expect(stops[0]?.attributes('data-jin-node-id')).toBe('a')
+  })
+
+  it('expands the first branch with ArrowRight after keyboard focus', async () => {
+    const wrapper = mount(JinTree, { props: { nodes } })
+    await wrapper.findAll('[role="treeitem"]')[0]?.trigger('focus')
+    await wrapper.get('[role="tree"]').trigger('keydown', { key: 'ArrowRight' })
+    await nextTick()
+    expect(wrapper.findAll('[role="treeitem"]')).toHaveLength(3)
   })
 })
 

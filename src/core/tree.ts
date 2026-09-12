@@ -174,12 +174,16 @@ export function navigateTree(
   rows: readonly FlatTreeRow[],
   activeId: string | null,
 ): TreeNavResult {
-  const active = rows.find((row) => row.id === activeId) ?? null
+  // No active row (a freshly focused tree, or the application replaced the
+  // data) anchors at the first selectable row. Leaving `active` null made
+  // ArrowLeft/Right do nothing and sent ArrowUp to the last row, which reads
+  // as "the keyboard is broken" until the user clicks a row.
+  const active = rows.find((row) => row.id === activeId) ?? selectableRows(rows)[0] ?? null
   switch (key) {
     case 'ArrowDown':
-      return { activeId: stepRow(rows, activeId, 1), toggle: null }
+      return { activeId: stepRow(rows, active?.id ?? null, 1), toggle: null }
     case 'ArrowUp':
-      return { activeId: stepRow(rows, activeId, -1), toggle: null }
+      return { activeId: stepRow(rows, active?.id ?? null, -1), toggle: null }
     case 'Home': {
       const first = selectableRows(rows)[0]
       return { activeId: first?.id ?? null, toggle: null }

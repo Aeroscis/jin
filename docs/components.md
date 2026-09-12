@@ -483,7 +483,9 @@ icon needs the `#item` slot. Neither route requires the library to understand th
 
 **Keyboard.** Up/Down move, Right expands or steps into a branch, Left collapses or moves to the
 parent, Home/End jump, `*` expands every loaded branch, and typing jumps to a matching label. The
-tree is one tab stop.
+tree is one tab stop. When no row has been active yet — a freshly focused tree, or one whose data
+was just replaced — the first selectable row is the anchor, so the very first key press already
+moves or expands rather than doing nothing.
 
 ---
 
