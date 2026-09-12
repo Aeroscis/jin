@@ -4,7 +4,7 @@
  * Keyboard reachable: the confirm button receives focus on open, Esc cancels,
  * and focus returns to the trigger.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import JinIcon from './JinIcon.vue'
 import JinButton from './JinButton.vue'
 import { useOverlay } from '../composables/useOverlay'
@@ -113,7 +113,14 @@ watch(isOpen, (open, wasOpen) => {
     })
     overlayId.value = entry.id
     scheduleUpdate()
-    requestAnimationFrame(() => scheduleUpdate())
+    // The anchor can arrive together with the open flag (an external anchor
+    // set at open time). Re-measure once the DOM has been updated, so the
+    // first paint uses the real anchor rect instead of the previous or a
+    // zero one.
+    void nextTick(() => {
+      scheduleUpdate()
+      requestAnimationFrame(() => scheduleUpdate())
+    })
     // Move focus to the confirm button so the keyboard user is not stranded.
     requestAnimationFrame(() => {
       floating.value?.querySelector<HTMLElement>('[data-jin-popconfirm-confirm]')?.focus()

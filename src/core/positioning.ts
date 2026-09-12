@@ -169,15 +169,22 @@ export function computePosition(anchor: Rect, floating: Rect, options: PositionO
   let flipped = false
 
   if (hasBoundary) {
-    let bestOverflow = mainAxisOverflow(preferred.side, coords, floating, boundary, padding)
-    for (const candidate of sides.slice(1)) {
-      const candidateCoords = coordinatesFor(candidate, preferred.align, anchor, floating, offset)
-      const overflow = mainAxisOverflow(candidate, candidateCoords, floating, boundary, padding)
-      if (overflow < bestOverflow) {
-        bestOverflow = overflow
-        chosenSide = candidate
-        coords = candidateCoords
-        flipped = true
+    // Flip only when the preferred side does not fit. Picking the side with
+    // the most slack instead would move a bubble to the opposite side of its
+    // anchor even when the preferred side fits — a `top` popconfirm on an
+    // upper-half row would open below it because the bottom has more room.
+    const preferredOverflow = mainAxisOverflow(preferred.side, coords, floating, boundary, padding)
+    if (preferredOverflow > 0) {
+      let bestOverflow = preferredOverflow
+      for (const candidate of sides.slice(1)) {
+        const candidateCoords = coordinatesFor(candidate, preferred.align, anchor, floating, offset)
+        const overflow = mainAxisOverflow(candidate, candidateCoords, floating, boundary, padding)
+        if (overflow < bestOverflow) {
+          bestOverflow = overflow
+          chosenSide = candidate
+          coords = candidateCoords
+          flipped = true
+        }
       }
     }
   }

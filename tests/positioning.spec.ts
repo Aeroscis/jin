@@ -84,6 +84,21 @@ describe('flip', () => {
     expect(result.side).toBe('bottom')
     expect(result.flipped).toBe(false)
   })
+
+  it('keeps the preferred side when both fit, even with more room opposite', () => {
+    // Regression: the opposite side used to win whenever it had more slack,
+    // so a `top` popover on an upper-half anchor (y = 343 in a 900-high
+    // viewport) opened below the anchor instead.
+    const upperHalf = { x: 100, y: 343, width: 300, height: 32 }
+    const bubble = { x: 0, y: 0, width: 240, height: 111 }
+    const result = computePosition(upperHalf, bubble, {
+      placement: 'top',
+      boundary: { width: 1440, height: 900 },
+    })
+    expect(result.side).toBe('top')
+    expect(result.flipped).toBe(false)
+    expect(result.y).toBe(343 - 111 - 8)
+  })
 })
 
 describe('shift', () => {

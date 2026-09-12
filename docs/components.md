@@ -192,7 +192,7 @@ Same contract as the modal, with `side: 'top' | 'right' | 'bottom' | 'left'` and
 | `modelValue` | `boolean` | Omitting it makes the popover self-managing |
 | `anchor` | `HTMLElement` | Defaults to the `#anchor` slot's wrapper |
 | `placement` | `Placement` | `'bottom'`, `'top-start'`, `'right-end'`, … |
-| `offset`, `flip`, `shift`, `arrow` | | Flip and shift default on |
+| `offset`, `flip`, `shift`, `arrow` | | Flip and shift default on; flip keeps the preferred side whenever it fits |
 | `closeOnEsc`, `closeOnOutside` | `boolean` | |
 | `ignoreAnchor` | `boolean` | Clicks on the trigger do not dismiss (default `true`) |
 | `lazy` | `boolean` | **Declared but not implemented** — the panel is always mounted while closed |
@@ -223,6 +223,8 @@ Opens on hover **and focus**, so touch and keyboard reach it too.
 | `placement` | `Placement` | |
 
 Focus moves to the confirm button on open, so a keyboard user is not stranded. Escape cancels.
+An `anchor` handed over together with the open flag is measured after the DOM update, so the bubble
+is positioned against the real anchor rather than a stale or zero rect.
 
 ---
 

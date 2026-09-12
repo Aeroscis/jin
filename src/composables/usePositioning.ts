@@ -156,6 +156,10 @@ export function usePositioning(options: UsePositioningOptions): UsePositioningRe
   watch(
     [options.anchor, options.floating, () => toValue(options.placement), () => toValue(options.arrow)],
     () => scheduleUpdate(),
+    // After the DOM update: when the anchor arrives with the open flag (an
+    // external anchor handed over at open time), a pre-flush re-measure would
+    // still read the previous anchor or a not-yet-laid-out element.
+    { flush: 'post' },
   )
 
   onBeforeUnmount(() => {

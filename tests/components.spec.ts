@@ -8,6 +8,7 @@ import JinTree from '../src/components/JinTree.vue'
 import JinField from '../src/components/JinField.vue'
 import JinTextField from '../src/components/JinTextField.vue'
 import JinModal from '../src/components/JinModal.vue'
+import JinPopconfirm from '../src/components/JinPopconfirm.vue'
 import JinProgress from '../src/components/JinProgress.vue'
 import JinTabs from '../src/components/JinTabs.vue'
 import JinSelect from '../src/components/JinSelect.vue'
@@ -405,6 +406,74 @@ describe('JinTree', () => {
     await wrapper.get('[role="tree"]').trigger('keydown', { key: 'ArrowRight' })
     await nextTick()
     expect(wrapper.findAll('[role="treeitem"]')).toHaveLength(3)
+  })
+})
+
+describe('JinPopconfirm', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+    document.querySelectorAll('.jin-portal').forEach((node) => node.remove())
+  })
+
+  function rect(top: number, left: number, width: number, height: number): DOMRect {
+    return {
+      top,
+      left,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      toJSON: () => ({}),
+    } as DOMRect
+  }
+
+  async function settle(): Promise<void> {
+    for (let index = 0; index < 4; index += 1) {
+      await nextTick()
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    }
+  }
+
+  async function openWithAnchor(anchorTop: number): Promise<HTMLElement> {
+    const row = document.createElement('div')
+    document.body.appendChild(row)
+    row.getBoundingClientRect = () => rect(anchorTop, 100, 300, 32)
+
+    const wrapper = mount(JinPopconfirm, {
+      props: { modelValue: false },
+      slots: { anchor: '<button>Delete</button>' },
+      attachTo: document.body,
+      global: { plugins: [[JinUI, {}]] as never },
+    })
+    await nextTick()
+
+    const floating = document.querySelector<HTMLElement>('.jin-popconfirm')
+    if (!floating) throw new Error('popconfirm did not render')
+    floating.getBoundingClientRect = () => rect(0, 0, 240, 111)
+
+    // The external anchor arrives together with the open flag — the shape
+    // that used to position against a stale or zero anchor rect.
+    await wrapper.setProps({ modelValue: true, anchor: row })
+    await settle()
+    return floating
+  }
+
+  it('measures an anchor handed over at open time', async () => {
+    const floating = await openWithAnchor(343)
+    expect(floating.dataset['placement']).toBe('top')
+    expect(floating.style.top).toBe('224px')
+    // The gap to the anchor is the offset — the bubble is not clamped to the
+    // viewport edge.
+    expect(343 - (Number.parseFloat(floating.style.top) + 111)).toBe(8)
+  })
+
+  it('keeps the offset for an anchor in the lower half', async () => {
+    const floating = await openWithAnchor(600)
+    expect(floating.dataset['placement']).toBe('top')
+    expect(floating.style.top).toBe('481px')
+    expect(600 - (Number.parseFloat(floating.style.top) + 111)).toBe(8)
   })
 })
 
