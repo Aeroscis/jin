@@ -396,6 +396,14 @@ keyboard is unusable. Long-press is **not implemented** (the wrapper listens to 
 `keydown` only), so touch users currently have no route into this menu. The menu is clamped into
 the viewport when the pointer is near an edge. Emits `select`.
 
+The wrapper is an inline-block `<span class="jin-context-menu">`, and the wrapper's box — not the
+page — is the right-click surface. A panel whose blank area should answer right-clicks too lets the
+wrapper fill it: attributes fall through, so put the application's own class on the component and
+size the wrapper there (`display: block; min-height: 100%` inside a panel of definite height, or
+`position: absolute; inset: 0` inside a positioned one). The library keeps no layout opinion beyond
+`inline-block`. Note the default `keyboardAccessible` makes that wrapper a tab stop; set it to
+`false` for a panel-wide surface that should not be one.
+
 ### JinBreadcrumb
 
 `items: BreadcrumbItem[]` (`{ label, href?, onClick?, current? }`), `ariaLabel`, `maxItems`, and a

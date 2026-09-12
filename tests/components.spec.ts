@@ -9,6 +9,7 @@ import JinField from '../src/components/JinField.vue'
 import JinTextField from '../src/components/JinTextField.vue'
 import JinModal from '../src/components/JinModal.vue'
 import JinDrawer from '../src/components/JinDrawer.vue'
+import JinContextMenu from '../src/components/JinContextMenu.vue'
 import JinPopover from '../src/components/JinPopover.vue'
 import JinPopconfirm from '../src/components/JinPopconfirm.vue'
 import JinProgress from '../src/components/JinProgress.vue'
@@ -582,6 +583,85 @@ describe('JinDrawer', () => {
     const scrim = document.querySelector<HTMLElement>('.jin-scrim')
     expect(scrim?.getAttribute('data-jin-visible')).toBeNull()
     expect(scrim?.style.display).toBe('none')
+  })
+})
+
+describe('JinContextMenu', () => {
+  beforeEach(() => {
+    document.body.innerHTML = ''
+    document.querySelectorAll('.jin-portal').forEach((node) => node.remove())
+  })
+
+  const items = [
+    { id: 'rename', label: 'Rename' },
+    { id: 'delete', label: 'Delete' },
+  ]
+
+  const layer = () => document.querySelector<HTMLElement>('.jin-context-menu__layer')
+
+  async function openAt(x: number, y: number) {
+    const host = withPlugin(JinContextMenu, {
+      props: { items },
+      slots: { default: '<p>surface</p>' },
+    })
+    await host.get('.jin-context-menu').trigger('contextmenu', { clientX: x, clientY: y })
+    // Two flushes: the entry registers on the open watcher, and the dismissable
+    // listeners attach from its post-flush follower.
+    await nextTick()
+    await nextTick()
+    return host
+  }
+
+  it('opens into the shared portal at the pointer', async () => {
+    const host = await openAt(40, 60)
+    expect(layer()?.parentElement?.classList.contains('jin-portal')).toBe(true)
+    expect(layer()?.style.display).not.toBe('none')
+    expect(layer()?.style.left).toBe('40px')
+    expect(layer()?.style.top).toBe('60px')
+    host.unmount()
+  })
+
+  it('survives a press on the menu itself so its items stay clickable', async () => {
+    // Regression: the wrapper was passed as the "inside" element, so every item
+    // press read as an outside click and the menu hid before the click landed.
+    const host = await openAt(40, 60)
+    layer()?.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await nextTick()
+    expect(layer()?.style.display).not.toBe('none')
+
+    layer()?.querySelector<HTMLElement>('[role="menuitem"]')?.click()
+    await nextTick()
+    expect(host.emitted('select')?.[0]?.[0]).toMatchObject({ id: 'rename' })
+    expect(layer()?.style.display).toBe('none')
+    host.unmount()
+  })
+
+  it('dismisses on a press outside the menu', async () => {
+    const host = await openAt(40, 60)
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await nextTick()
+    expect(layer()?.style.display).toBe('none')
+    host.unmount()
+  })
+
+  it('stays shut while disabled', async () => {
+    const host = withPlugin(JinContextMenu, {
+      props: { items, disabled: true },
+      slots: { default: '<p>surface</p>' },
+    })
+    await host.get('.jin-context-menu').trigger('contextmenu', { clientX: 10, clientY: 10 })
+    await nextTick()
+    expect(layer()?.style.display).toBe('none')
+    host.unmount()
+  })
+
+  it('releases its stack entry when an open menu is unmounted', async () => {
+    const host = await openAt(40, 60)
+    expect(JinUI.overlay?.stack.count()).toBe(1)
+
+    host.unmount()
+    await nextTick()
+    expect(JinUI.overlay?.stack.count()).toBe(0)
   })
 })
 
