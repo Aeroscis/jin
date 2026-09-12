@@ -1,32 +1,48 @@
 # Consuming Jin from an application
 
 This is the practical guide for wiring the library into a Vue 3 + Vite application. It exists
-because the two things that go wrong — a second Vue instance and a dev server that refuses to serve
-the library — produce confusing symptoms rather than clear errors.
+because the things that go wrong here — a second Vue instance, a dev server that refuses to serve the
+library, a stylesheet that never loaded — produce confusing symptoms rather than clear errors.
 
 ---
 
 ## 1. Add the dependency
 
-Prefer a workspace entry if the application and the library already share a repository root;
-otherwise a `file:` path works.
+Three ways, depending on how much of the loop you want to close:
 
 ```jsonc
 // package.json
 {
   "dependencies": {
-    "jin-ui": "file:../jin"
+    // Edits to the library show up in the application immediately.
+    "@aeroscis/jin": "file:../jin",
+    // A packed tarball: `npm pack` inside the library, then install the file.
+    // "@aeroscis/jin": "file:./vendor/aeroscis-jin-0.1.0.tgz",
+    // Or a git tag, which npm builds on install (`prepare`).
+    // "@aeroscis/jin": "git+https://gitee.com/Aeroscis/jin.git#v0.1.0"
   }
 }
 ```
 
 With npm, a `file:` dependency on a local directory becomes a symlink. That is what you want: edits
-to the library appear in the application immediately.
+to the library appear in the application immediately, and no build step sits between them.
+
+If you are handing the library to someone else, hand them the tarball. A git dependency is built on
+install — npm runs the library's `prepare`, which needs the dev dependencies to be reachable from the
+registry — so with `ignore-scripts` set, or a script-approval policy in force, it arrives without
+`dist/` and nothing resolves. The tarball from `npm pack` carries `dist/` inside it and installs with
+no scripts at all.
+
+There is no registry release yet — 0.1.0 is pre-release and the component API is still moving. When
+there is one it will be `@aeroscis/jin` (scoped, because npm already has both `jin` and `jin-ui`);
+until then the three paths above are the ones to use.
 
 **Do not** add `vue` to the library's own `dependencies`. It is a peer dependency, and a second copy
 is the single most confusing failure mode this setup has.
 
 ## 2. Configure Vite
+
+For a linked checkout, three lines and no aliases:
 
 ```ts
 // vite.config.ts
@@ -37,17 +53,11 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   resolve: {
+    // Take the library's `source` exports instead of `dist/`, so this Vite
+    // instance compiles the library's `.ts` and `.vue` files directly.
+    conditions: ['source'],
     // Mandatory. See "Symptoms" below for what happens without it.
     dedupe: ['vue'],
-    // Optional: point straight at the sources so you never depend on the
-    // library's own build output during development.
-    alias: [
-      // Sub-path aliases must come before the bare package alias.
-      { find: 'jin-ui/styles', replacement: fileURLToPath(new URL('../jin/src/styles/jin.css', import.meta.url)) },
-      { find: 'jin-ui/themes', replacement: fileURLToPath(new URL('../jin/themes', import.meta.url)) },
-      { find: 'jin-ui/contracts', replacement: fileURLToPath(new URL('../jin/contracts', import.meta.url)) },
-      { find: 'jin-ui', replacement: fileURLToPath(new URL('../jin/src/index.ts', import.meta.url)) },
-    ],
   },
   server: {
     fs: {
@@ -59,27 +69,47 @@ export default defineConfig({
 })
 ```
 
-The alias ordering point is not cosmetic. A bare string alias matches at a path boundary, so
-`jin-ui` listed first swallows `jin-ui/themes/...` and Vite resolves it *inside the library entry
-file*, producing a "failed to resolve import" error that points at the wrong file.
+A tarball or registry install needs none of this — it reads `dist/jin.js` and the shipped
+declarations, and `vue` resolves to the single copy already in the application. Keep `dedupe` only if
+something else in the graph can bring its own Vue.
+
+The type checker needs the same condition, or it reads the last build's declarations instead of the
+sources you are editing:
+
+```jsonc
+// tsconfig.json
+{
+  "compilerOptions": {
+    // Requires `moduleResolution: "bundler"` (or node16/nodenext), which a Vite
+    // project already uses.
+    "customConditions": ["source"]
+  }
+}
+```
+
+`source` is the whole of the old four-entry alias list, and it exists because that list had a
+footgun: a bare `@aeroscis/jin` alias matches at a path boundary and swallows `@aeroscis/jin/themes/...` when it is
+listed first, producing a "failed to resolve import" that points at the wrong file. A condition is
+matched by the package's own `exports` map, so the sub-paths stay where they belong.
 
 ## 3. Install the plugin
 
 ```ts
 // main.ts
 import { createApp } from 'vue'
-import { JinUI } from 'jin-ui'
+import { JinUI } from '@aeroscis/jin'
 
 // The base sheet first, then the themes. A theme only sets custom properties,
 // so it must come after the sheet that consumes them.
-import 'jin-ui/styles'
-import 'jin-ui/themes/jin.css'
-import 'jin-ui/themes/jin.dark.css'
+import '@aeroscis/jin/styles.css'
+import '@aeroscis/jin/themes/jin.css'
+import '@aeroscis/jin/themes/jin.dark.css'
 
 import App from './App.vue'
 
 const app = createApp(App)
 
+// Every option is optional: `app.use(JinUI)` alone is a valid install.
 app.use(JinUI, {
   t: (key, vars) => i18n.t(key, vars),
   capabilities: {
@@ -105,6 +135,12 @@ app.use(JinUI, {
 
 app.mount('#app')
 ```
+
+`import '@aeroscis/jin/styles.css'` is the one import here that nothing else can cover for you. It is
+deliberately not pulled in by the library's own entry module, because a stylesheet imported from
+inside a dependency can be dropped by the consumer's bundler — and the controls still render, so the
+only symptom is that everything is unstyled. If the sheet is missing when the app starts, the plugin
+says so once in the console, by name.
 
 ### Translating the library's strings
 
@@ -159,7 +195,7 @@ application never opens a modal.
 ## 5. Switching the theme at runtime
 
 ```ts
-import { useTheme } from 'jin-ui'
+import { useTheme } from '@aeroscis/jin'
 
 const theme = useTheme()
 theme.setStyle('brutalism')
@@ -190,11 +226,14 @@ persist anything itself; that is the application's job, and the Gallery shows on
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
+| Controls render, all of them unstyled, nothing in the console from the library | The base stylesheet was never imported | `import '@aeroscis/jin/styles.css'` in the entry file — the plugin also warns once at startup when it is missing |
 | Reactivity silently stops working; `provide`/`inject` returns nothing | Two Vue instances — the linked library loaded its own copy | Add `resolve.dedupe: ['vue']` |
-| "Failed to resolve import" pointing at a file inside the library | Alias order: the bare package alias matched a sub-path import | List `jin-ui/styles`, `/themes`, `/contracts` before `jin-ui` |
+| The application runs the library's built code, and library edits do not appear | `file:` dependency without `resolve.conditions: ['source']` | Add the condition, or drop it and let `npm install` in the library rebuild `dist/` |
+| The editor and `vue-tsc` report types that are a build behind | Runtime takes the `source` condition, the type checker does not | Add `customConditions: ['source']` to the consuming `tsconfig.json` |
 | Dev server returns 403 for library files | The library is outside the app root | Add `server.fs.allow` covering the parent directory |
 | Every message appears twice | The toast/notification regions are mounted more than once | Mount them once, at the root |
 | A themed control looks unstyled | The theme file was not imported, so the tokens are missing | Import the theme, or accept the token fallbacks in the stylesheet |
+| "Cannot find module '@aeroscis/jin/styles'" after upgrading | The specifier is now `@aeroscis/jin/styles.css` — the missing `.css` was never resolvable through the package's `exports` | Rename the import |
 | Styles leak into the application | The application wrote a `.jin-*` selector, or the library gained a global element selector | Run `npm run check` — both are caught mechanically |
 
 ---

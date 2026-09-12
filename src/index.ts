@@ -1,16 +1,21 @@
 /**
  * Jin (锦) — public surface.
  *
- * Two things an application imports:
+ * Three things an application imports:
  *   1. `JinUI` + the composables, from this module
- *   2. a theme, e.g. `import 'jin-ui/themes/jin.css'` ('jin' is the default style)
+ *   2. the base stylesheet: `import '@aeroscis/jin/styles.css'`
+ *   3. a theme, e.g. `import '@aeroscis/jin/themes/jin.css'` ('jin' is the default style)
  *
- * The base stylesheet is imported here rather than left to the consumer: no
- * component renders correctly without it, so requiring a separate import would
- * only add a way to get it wrong. Themes stay explicit, because choosing one is
- * a real decision.
+ * The base stylesheet is deliberately NOT imported here. It was, so a consumer
+ * could not forget it — but a bare CSS import inside a dependency is one
+ * statement away from being tree-shaken: whether it survives depends on the
+ * *consumer's* bundler and on this package's `sideEffects` declaration matching
+ * module ids that carry a query suffix. When it does not match, the import is
+ * dropped and the failure is silent: controls render, unstyled, with nothing
+ * reported anywhere. An import the application writes itself cannot be dropped,
+ * so the sheet is explicit, and the plugin warns once at install time if it is
+ * missing. Themes stay explicit because choosing one is a real decision.
  */
-import './styles/jin.css'
 
 /* ------------------------------------------------------------------ plugin */
 export { default as JinUI } from './injection/plugin'

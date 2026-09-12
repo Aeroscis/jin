@@ -11,6 +11,7 @@ import { provideOverlay, createOverlayController, type OverlayController } from 
 import { provideCapabilities, resolveCapabilities } from './provide-capabilities'
 import { createTheme, provideTheme, type ThemeOptions } from './theme'
 import { provideFeedbackStores } from '../composables/useFeedback'
+import { warnIfStylesheetMissing } from './stylesheet'
 import type { JinCapabilities } from './capabilities'
 
 export interface JinUIOptions {
@@ -24,7 +25,7 @@ export interface JinUIOptions {
   overlay?: OverlayController
 }
 
-export type JinUIPlugin = ObjectPlugin<JinUIOptions> & {
+export type JinUIPlugin = ObjectPlugin<[options?: JinUIOptions]> & {
   /** The overlay controller created for the installed app. */
   overlay: OverlayController | null
 }
@@ -39,6 +40,7 @@ const plugin: JinUIPlugin = {
     provideTheme(app, createTheme(options.theme ?? {}))
     provideFeedbackStores(app)
     plugin.overlay = controller
+    warnIfStylesheetMissing(controller.root.value)
   },
 }
 

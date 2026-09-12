@@ -38,6 +38,17 @@
   pointer-events: auto;
 }
 
+/*
+ * Presence marker, read by the plugin once the document has loaded (immediately
+ * at install time when it already has). A stylesheet that never loaded is
+ * otherwise undetectable: the controls render unstyled and nothing raises an
+ * error. Kept in its own rule so it is clear that it is not part of the portal's
+ * layout, and not a contract token — themes own those.
+ */
+.jin-portal {
+  --jin-stylesheet-loaded: 1;
+}
+
 .jin-scrim {
   position: fixed;
   inset: 0;

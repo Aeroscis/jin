@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Jin token/style discipline checks.
 
-Five mechanical checks, run with `python tools/check_tokens.py` (or `npm run check`):
+Six mechanical checks, run with `python tools/check_tokens.py` (or `npm run check`):
 
-  1. Token completeness  - every theme file defines every token in contracts/tokens.json
-  2. No hardcoded values - control styles contain no hex colours, px radii,
-                           literal box-shadows, time literals or font-size literals
-  3. No business words   - library source contains none of the blacklisted words
-  4. One-way dependency  - no library file imports application code
+  1. Token completeness   - every theme file defines every token in contracts/tokens.json
+  2. No hardcoded values  - control styles contain no hex colours, px radii,
+                            literal box-shadows, time literals or font-size literals
+  3. No business words    - library source contains none of the blacklisted words
+  4. One-way dependency   - no library file imports application code
   5. Naming discipline    - class names use jin-*, components use Jin*, and the
-                           library stylesheet has no global element selectors
+                            library stylesheet has no global element selectors
+  6. Stylesheet marker    - the stylesheet declares the custom property the plugin
+                            reads to tell a missing stylesheet from a loaded one
 
 Exit code 0 = all checks pass. Any failure prints the offending file and line.
 """
@@ -283,7 +285,7 @@ def check_no_hardcoded(report: Report) -> None:
 
             if prop in {"animation", "transition", "animation-duration", "transition-duration", "animation-delay", "transition-delay"}:
                 if TIME_RE.search(value):
-                    if is_structural_motion(css_file, line, prop, raw_value):
+                    if is_structural_motion(css_file, prop, raw_value):
                         continue
                     report.fail("hardcoded", f"{css_file.relative_to(ROOT)}:{line} literal time in `{prop}: {raw_value}`")
                 continue
@@ -311,22 +313,23 @@ def check_no_hardcoded(report: Report) -> None:
 
 
 # Mechanical animation rates that themes must not be able to shorten to zero:
-# a frozen spinner no longer communicates "working". These are the explicitly
-# enumerated structural exceptions.
-STRUCTURAL_MOTION: list[tuple[str, int, str]] = [
-    ("jin.css", 284, "spinner rotation: a mechanical rate, not a style choice"),
-    ("jin.css", 319, "slow spinner under reduced motion"),
-    ("jin.css", 439, "skeleton sweep: mechanical rate"),
-    ("jin.css", 745, "progress slide: mechanical rate"),
+# a frozen spinner no longer communicates "working". The exceptions are
+# enumerated by property and value rather than by line number, because a
+# line-number table silently retires an exception the moment a rule above it
+# moves — and moving rules is exactly what editing this stylesheet does.
+# Declarations whose value names the animation (`jin-spin`, `jin-sweep`,
+# `progress-slide`) are recognised without an entry; only literal rates need one.
+STRUCTURAL_MOTION: list[tuple[str, str, str]] = [
+    ("animation-duration", "2400ms", "slow spinner under reduced motion"),
 ]
 
 
-def is_structural_motion(css_file: Path, line: int, prop: str, value: str) -> bool:
+def is_structural_motion(css_file: Path, prop: str, value: str) -> bool:
     if css_file.name != "jin.css":
         return False
     if "spin" in value or "sweep" in value or "progress-slide" in value:
         return True
-    return any(entry[1] == line for entry in STRUCTURAL_MOTION)
+    return any(entry[0] == prop and entry[1] == value.strip() for entry in STRUCTURAL_MOTION)
 
 
 # --------------------------------------------------------------------------
@@ -499,6 +502,31 @@ def check_naming(report: Report) -> None:
             report.fail("naming", f"{path.relative_to(ROOT)}:{line_number} attribute data-{name} is not data-jin-*")
 
 
+def check_stylesheet_marker(report: Report) -> None:
+    """The plugin reads a marker property the stylesheet has to declare.
+
+    Neither file is wrong on its own when the two names drift apart: the plugin
+    simply goes on warning that the stylesheet is missing while it is loaded,
+    which is worse than not warning at all. Mechanical because the coupling is
+    invisible in each file viewed on its own.
+    """
+    stylesheet_ts = SRC / "injection" / "stylesheet.ts"
+    base_sheet = SRC / "styles" / "jin.css"
+
+    match = re.search(r"STYLESHEET_MARKER\s*=\s*'([^']+)'", stylesheet_ts.read_text(encoding="utf-8"))
+    if not match:
+        report.fail("marker", f"{stylesheet_ts.relative_to(ROOT)} no longer declares STYLESHEET_MARKER as a string literal")
+        return
+
+    marker = match.group(1)
+    if not re.search(re.escape(marker) + r"\s*:\s*1\b", base_sheet.read_text(encoding="utf-8")):
+        report.fail(
+            "marker",
+            f"{base_sheet.relative_to(ROOT)} does not declare `{marker}: 1`, the mark the plugin reads to tell a "
+            "missing stylesheet from a loaded one",
+        )
+
+
 def main() -> int:
     report = Report()
     tokens = load_tokens()
@@ -510,6 +538,7 @@ def main() -> int:
     check_no_business_words(report)
     check_one_way_dependency(report)
     check_naming(report)
+    check_stylesheet_marker(report)
 
     for note in report.notes:
         print(f"  {DIM}{note}{RESET}")
