@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * JinSkeleton — placeholder shapes while content loads.
- * `JinSkeletonText` is the convenience wrapper for a paragraph of lines.
+ * JinSkeleton — placeholder shapes while content loads. A paragraph of lines
+ * is several `text` variants in a row; there is no separate wrapper component.
  */
 import { computed, type CSSProperties } from 'vue'
 
