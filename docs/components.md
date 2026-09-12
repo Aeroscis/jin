@@ -344,8 +344,10 @@ mounting the component.
 | `activation` | `'automatic' \| 'manual'` | Manual means arrows move focus and Enter/Space selects |
 | `grow` | `boolean` | Tabs fill the list |
 
-Panels are projected by tab value (`<template #panelValue>`); the library wires
-`role="tab"`/`role="tabpanel"` and `aria-controls` without taking ownership of where the panel lives.
+Panels are projected by tab value (`<template #panelValue>`), or by the shared `#panel` slot for
+every tab without a value-named slot; `#default` is **not** a panel route and renders nothing. The
+library wires `role="tab"`/`role="tabpanel"` and `aria-controls` without taking ownership of where
+the panel lives.
 
 ### JinMenu
 

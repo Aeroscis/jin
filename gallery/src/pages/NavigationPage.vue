@@ -196,7 +196,7 @@ const cardClicks = ref(0)
         <div>
           <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">Vertical</p>
           <JinTabs v-model="verticalTab" :items="manyTabs" orientation="vertical" aria-label="Vertical tabs">
-            <template #default="{ item }">
+            <template #panel="{ item }">
               <p class="gallery-muted">Content for {{ item.label }}.</p>
             </template>
           </JinTabs>
@@ -207,7 +207,7 @@ const cardClicks = ref(0)
             Manual activation — arrows move focus, Enter or Space selects
           </p>
           <JinTabs v-model="manualTab" :items="manualTabs" activation="manual" aria-label="Manual tabs">
-            <template #default="{ item }">
+            <template #panel="{ item }">
               <p class="gallery-muted">Selected: {{ item.label }}</p>
             </template>
           </JinTabs>
@@ -216,7 +216,7 @@ const cardClicks = ref(0)
         <div>
           <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">Growing to fill the list</p>
           <JinTabs v-model="nestedTab" :items="nestedTabs" :grow="true" aria-label="Growing tabs">
-            <template #default="{ item }">
+            <template #panel="{ item }">
               <p class="gallery-muted">{{ item.label }}</p>
             </template>
           </JinTabs>
@@ -510,7 +510,7 @@ const cardClicks = ref(0)
           <JinDivider />
 
           <JinTabs v-model="tab" :items="tabs.slice(0, 3)" aria-label="Panel tabs">
-            <template #default="{ item }">
+            <template #panel="{ item }">
               <JinAlert tone="neutral" :title="`${item.label} panel`" description="Each tab can hold anything." />
             </template>
           </JinTabs>
