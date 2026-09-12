@@ -15,6 +15,32 @@ Conventions used throughout:
 
 ---
 
+## Actions
+
+### JinButton
+
+The base action control: a real `<button>` by default, an `<a>` when `href` is set.
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `variant` | `'primary' \| 'secondary' \| 'ghost' \| 'danger' \| 'link'` | Default `'secondary'` |
+| `size`, `block`, `type` | | `type` defaults to `'button'` |
+| `icon` | `boolean` | Icon-only: square layout; takes `label` as its accessible name |
+| `label` | `string` | Visible text, or the accessible name in icon mode |
+| `href` | `string` | Renders an anchor; disabled/loading drop the `href` and use `aria-disabled` |
+| `loading` | `boolean` | Swaps the icon for a spinner, sets `aria-busy`, blocks activation |
+| `disabled` | `boolean` | Blocks activation and removes the control from the tab order |
+
+Slots: `icon`, default.
+
+**The accessible-name rule.** An icon-only button (`icon` + `label`) renders `label` as
+visually-hidden text — whether or not the application also passes a `#icon` slot — so the button
+always has a name. This is the button's single naming mechanism: it never carries `aria-label` as
+well, so there is one name to translate and one for a screen reader to announce. The name also
+stays while the button is loading, so a busy button still says what it does.
+
+---
+
 ## Feedback
 
 ### JinSpinner

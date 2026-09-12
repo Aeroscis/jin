@@ -86,6 +86,11 @@ const showLabelText = computed(() => !props.icon)
     <slot v-else name="icon" />
     <span v-if="showLabelText && !$slots.default && label" class="jin-button__label">{{ label }}</span>
     <span v-else-if="showLabelText && $slots.default" class="jin-button__label"><slot /></span>
-    <span v-else-if="!showLabelText && !$slots.icon && !showSpinner" class="jin-visually-hidden">{{ label }}</span>
+    <!--
+      The accessible name for an icon-only button. It is text rather than an
+      aria-label on purpose: it is the one mechanism, it works whether or not
+      the application passes a #icon slot, and it survives while loading.
+    -->
+    <span v-else-if="!showLabelText && !isLink && !$slots.default && label" class="jin-visually-hidden">{{ label }}</span>
   </component>
 </template>

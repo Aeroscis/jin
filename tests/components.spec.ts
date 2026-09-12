@@ -72,6 +72,29 @@ describe('JinButton', () => {
     expect(wrapper.get('button').text()).toContain('Close')
     expect(wrapper.find('.jin-visually-hidden').exists()).toBe(true)
   })
+
+  it('still names an icon-only button when the glyph arrives through #icon', () => {
+    // Regression: the accessible name used to require the absence of an
+    // #icon slot, so the documented icon-only usage rendered a button with no
+    // name at all — exactly the shape every application writes.
+    const wrapper = mount(JinButtonIdx, {
+      props: { icon: true, label: 'Settings' },
+      slots: { icon: () => h(JinIcon, { name: 'settings' }) },
+    })
+    const button = wrapper.get('button')
+    expect(button.find('svg').exists()).toBe(true)
+    expect(button.text()).toContain('Settings')
+    expect(wrapper.find('.jin-visually-hidden').exists()).toBe(true)
+    // One naming mechanism only: the hidden text, not aria-label as well.
+    expect(button.attributes('aria-label')).toBeUndefined()
+  })
+
+  it('keeps the accessible name while an icon-only button is loading', () => {
+    const wrapper = mount(JinButtonIdx, { props: { icon: true, label: 'Reload', loading: true } })
+    const button = wrapper.get('button')
+    expect(button.attributes('aria-busy')).toBe('true')
+    expect(button.text()).toContain('Reload')
+  })
 })
 
 describe('JinIcon', () => {
