@@ -434,7 +434,7 @@ The most demanding control in the set, and the one with the strictest boundary.
 | `load` | `(node) => Promise<TreeNode[]>` | For branches with `hasChildren` and no `children` |
 | `expanded` | `string[]` | `v-model:expanded`; omit to let the tree keep its own state |
 | `selected` | `string \| null` | `v-model:selected` |
-| `selectionMode` | `'none' \| 'single' \| 'multiple'` | |
+| `selectionMode` | `'none' \| 'single' \| 'multiple'` | Multiple selection is uncontrolled: the tree keeps the set internally and reports it through `update:selectedMany`; there is no `selectedMany` prop to write back yet |
 | `ariaLabel`, `indent`, `loadingLabel`, `emptyLabel` | | |
 
 Emits: `update:expanded`, `update:selected`, `update:selectedMany`, `activate`, `toggle`,
