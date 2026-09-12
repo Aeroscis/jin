@@ -109,6 +109,24 @@ describe('lazy loading state machine', () => {
     expect(childrenOf(nodes[1] as TreeNode, empty)).toEqual([])
     expect(hasChildrenOf(nodes[1] as TreeNode, empty)).toBe(false)
   })
+
+  it('prefers application children over a previous load result', () => {
+    // Regression: the load cache used to win over `node.children`, so a branch
+    // that had been fetched once kept rendering the fetched rows even after
+    // the application re-scanned and put new children into `nodes`.
+    const loaded = applyLoadSuccess(createTreeState(), 'b', [{ id: 'b1', label: 'Old' }])
+    const rescanned: TreeNode = { id: 'b', label: 'Beta', children: [{ id: 'b2', label: 'New' }] }
+    expect(childrenOf(rescanned, loaded)?.map((child) => child.id)).toEqual(['b2'])
+  })
+
+  it('treats explicit empty children as authoritative', () => {
+    // A branch the application has pruned (children: []) is a leaf, not a
+    // branch with one more level of cached rows.
+    const loaded = applyLoadSuccess(createTreeState(), 'b', [{ id: 'b1', label: 'Old' }])
+    const pruned: TreeNode = { id: 'b', label: 'Beta', children: [] }
+    expect(childrenOf(pruned, loaded)).toEqual([])
+    expect(hasChildrenOf(pruned, loaded)).toBe(false)
+  })
 })
 
 describe('navigateTree', () => {

@@ -358,6 +358,29 @@ describe('JinTree', () => {
     const wrapper = mount(JinTree, { props: { nodes: [{ id: 'x', label: 'X', tone: 'warning' }] } })
     expect(wrapper.get('[role="treeitem"]').classes()).toContain('jin-tree__row--tone-warning')
   })
+
+  it('follows node.children when the application replaces a loaded branch', async () => {
+    // Regression: the internal load cache used to shadow whatever the
+    // application put into `nodes` after a successful load.
+    const load = vi.fn().mockResolvedValue([{ id: 'b1', label: 'Beta one' }])
+    const wrapper = mount(JinTree, { props: { nodes, load } })
+    await wrapper.findAll('[role="treeitem"]')[1]?.get('.jin-tree__twisty').trigger('click')
+    await nextTick()
+    await nextTick()
+    expect(wrapper.text()).toContain('Beta one')
+
+    await wrapper.setProps({
+      nodes: [
+        { id: 'a', label: 'Alpha', children: [{ id: 'a1', label: 'Alpha one' }] },
+        { id: 'b', label: 'Beta', children: [{ id: 'b2', label: 'Beta two' }] },
+      ],
+    })
+    await nextTick()
+    expect(wrapper.text()).toContain('Beta two')
+    expect(wrapper.text()).not.toContain('Beta one')
+    // Inline children satisfy the branch, so nothing is refetched.
+    expect(load).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('JinModal', () => {

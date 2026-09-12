@@ -56,10 +56,17 @@ export function createTreeState(init: Partial<TreeState> = {}): TreeState {
   }
 }
 
+/**
+ * The children to render for a node.
+ *
+ * `node.children` always wins. The load cache is a memo of what `load`
+ * returned, never a replacement for data the application puts in `nodes`: an
+ * application that re-scans and hands over new children must see those
+ * children, not the previous fetch.
+ */
 export function childrenOf(node: TreeNode, state?: TreeState): TreeNode[] | undefined {
-  const loaded = state?.loaded[node.id]
-  if (loaded) return loaded
-  return node.children
+  if (node.children !== undefined) return node.children
+  return state?.loaded[node.id]
 }
 
 export function hasChildrenOf(node: TreeNode, state: TreeState): boolean {

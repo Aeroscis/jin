@@ -452,6 +452,17 @@ on the row that is loading, and the load state machine.
 **What the application provides:** what a node means, where children come from, why a load failed,
 what a badge says, what a colour means, and every string the user reads.
 
+**The application's data wins when it supplies it.** `node.children` is what the tree renders for
+that node; the result of `load` is the stand-in only while the node carries no `children`. So a
+branch that was fetched once stops showing the fetched rows as soon as the application puts
+`children` back on the node — including an empty array, which makes it a leaf.
+
+The boundary of that rule: a node whose `children` the application removes again falls back to the
+cached load result, and there is no invalidation API — replacing the `nodes` array does not clear
+the cache either. To force a branch back to "not loaded", give it `children: []` or remount the
+tree. An invalidation route (`invalidate(id)` / a cache option) is a candidate for a later round,
+not part of this API.
+
 **The failure contract.** When `load` rejects, the library does exactly three things:
 
 1. returns the row to *not loaded* — collapsed, no loading flag — so a retry is a fresh attempt;
