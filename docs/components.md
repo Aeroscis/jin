@@ -109,7 +109,7 @@ twice.
 Driven through their stores:
 
 ```ts
-import { useToasts, useNotifications } from 'jin-ui'
+import { useToasts, useNotifications } from '@aeroscis/jin'
 
 const toasts = useToasts()
 const notifications = useNotifications()
@@ -554,7 +554,7 @@ import {
   flattenTree, navigateTree, applyLoadFailure,
   fromKeyboardEvent, serializeHotkey, findHotkeyConflicts,
   createQueue,
-} from 'jin-ui'
+} from '@aeroscis/jin'
 ```
 
 The distinction worth keeping in mind: `useOverlay`, `usePositioning` and `useFocusTrap` are the DOM

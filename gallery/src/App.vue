@@ -4,7 +4,7 @@
  *
  * Requirement 1 is that the Gallery is built from the library's own components:
  * the navigation, the two switchers, the dropdown, the modals, the tooltips and
- * every message on this page come from `jin-ui`. Where a native element would
+ * every message on this page come from `@aeroscis/jin`. Where a native element would
  * have been easier, the library component is used on purpose — this is the
  * strongest test the library has.
  */
@@ -30,7 +30,7 @@ import {
   useToasts,
   type MenuEntry,
   type NavItem,
-} from 'jin-ui'
+} from '@aeroscis/jin'
 import { AVAILABLE_STYLES } from './host/preferences'
 import { getCapabilities } from './host/capabilities'
 import TokenPanel from './panels/TokenPanel.vue'

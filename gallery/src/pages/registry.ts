@@ -4,7 +4,7 @@
  * list, so adding a page is a one-file change.
  */
 import type { Component } from 'vue'
-import type { IconName } from 'jin-ui'
+import type { IconName } from '@aeroscis/jin'
 
 import FeedbackPage from './FeedbackPage.vue'
 import OverlayPage from './OverlayPage.vue'

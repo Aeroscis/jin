@@ -13,12 +13,7 @@
     "jsx": "preserve",
     "noEmit": true,
     "types": ["vite/client"],
-    "paths": {
-      "jin-ui": ["../src/index.ts"],
-      "jin-ui/styles": ["../src/styles/jin.css"],
-      "jin-ui/themes/*": ["../themes/*"],
-      "jin-ui/contracts/*": ["../contracts/*"]
-    }
+    "customConditions": ["source"]
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "env.d.ts"],
   "exclude": ["node_modules", "dist", "src-tauri"]

@@ -26,7 +26,7 @@ import {
   type MenuEntry,
   type NavItem,
   type TabItem,
-} from 'jin-ui'
+} from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
 
 defineProps<{ section?: string | null }>()

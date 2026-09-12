@@ -21,7 +21,7 @@ import {
   JinSwitch,
   JinTextField,
   JinTooltip,
-} from 'jin-ui'
+} from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
 
 defineProps<{ section?: string | null }>()

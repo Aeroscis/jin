@@ -17,7 +17,7 @@
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.4.1",
     "@tauri-apps/plugin-opener": "^2.5.5",
-    "jin-ui": "file:..",
+    "@aeroscis/jin": "file:..",
     "vue": "^3.5.42"
   },
   "devDependencies": {

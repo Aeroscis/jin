@@ -27,24 +27,47 @@ the behaviour shared across applications instead of re-implemented per control.
 
 ## Install
 
-The library is consumed as source, not as a build artifact. That way an edit to the library is
-visible to both applications immediately, with no rebuild step in between.
+```bash
+npm install /path/to/jin                  # a checkout on this machine
+npm install ./aeroscis-jin-0.1.0.tgz      # a tarball from `npm pack`
+# No registry release yet — 0.1.0 is pre-release. When there is one it will be
+# `npm install @aeroscis/jin`; see Packaging for why it is scoped.
+```
+
+`vue` is a **peer** dependency: the library never ships its own copy.
+
+Three imports, all in the entry file:
+
+```ts
+import { JinUI } from '@aeroscis/jin'              // the plugin and the components you use
+import '@aeroscis/jin/styles.css'                  // the base stylesheet — required
+import '@aeroscis/jin/themes/jin.css'              // a style (jin is the default)
+import '@aeroscis/jin/themes/jin.dark.css'         // and its mode
+```
+
+The base stylesheet is an import the application writes rather than something the plugin pulls in
+by itself, and that is deliberate. A stylesheet imported from inside a dependency can be dropped by
+the consumer's bundler — silently, because the controls still render, and nothing is reported
+anywhere — so it is an import that cannot be dropped. If it is missing at startup the plugin says so
+once, by name.
+
+### Working on the library and an application at the same time
+
+A `file:` dependency that reads the library's sources makes an edit visible with no rebuild:
 
 ```jsonc
 // package.json of the consuming application
 {
-  "dependencies": {
-    "jin-ui": "file:../jin"     // or an npm workspace entry
-  }
+  "dependencies": { "@aeroscis/jin": "file:../jin" }    // or an npm workspace entry
 }
 ```
-
-`vue` stays a **peer** dependency. Two settings in the consumer's Vite config are not optional:
 
 ```ts
 // vite.config.ts
 export default defineConfig({
   resolve: {
+    // Take the library's `source` entries instead of its built ones.
+    conditions: ['source'],
     // Without this the linked library brings a second copy of Vue, and the
     // symptom is silent reactivity breakage rather than an error.
     dedupe: ['vue'],
@@ -57,8 +80,25 @@ export default defineConfig({
 })
 ```
 
-A publish build is also available (`npm run build`) and emits ESM + `.d.ts` + `jin.css` for
-consumers that would rather not compile source.
+```jsonc
+// tsconfig.json — the same condition, for the type checker
+{
+  "compilerOptions": { "customConditions": ["source"] }
+}
+```
+
+Two lines in total, one per tool: `resolve.conditions` decides what the bundler runs,
+`customConditions` decides what the editor and `vue-tsc` read. Without the second one the types come
+from `dist/index.d.ts`, which is one build behind whatever you are editing.
+
+`npm install` inside the library builds `dist/` (its `prepare` script), so the dependency also
+resolves without the `source` condition — that path reads the built ESM and declarations, which is
+what a tarball or registry install gets. Both are verified mechanically: the Gallery builds and type
+checks in source mode, and `npm run smoke` packs the library, installs the tarball into a scratch
+project and builds it against `dist/`, asserting that the stylesheet and the contracts arrive and
+that the shipped declarations type-check.
+[`docs/consuming.md`](docs/consuming.md) is the long form, including the symptoms of getting it
+wrong.
 
 ---
 
@@ -67,15 +107,15 @@ consumers that would rather not compile source.
 ```ts
 // main.ts
 import { createApp } from 'vue'
-import { JinUI } from 'jin-ui'
-import 'jin-ui/styles'
-import 'jin-ui/themes/jin.css'
-import 'jin-ui/themes/jin.dark.css'
+import { JinUI } from '@aeroscis/jin'
+import '@aeroscis/jin/styles.css'
+import '@aeroscis/jin/themes/jin.css'
+import '@aeroscis/jin/themes/jin.dark.css'
 import App from './App.vue'
 
 createApp(App)
   .use(JinUI, {
-    // All three are optional. Omitting them is a supported configuration.
+    // All three are optional: `app.use(JinUI)` on its own is a valid install.
     t: (key, vars) => i18n.t(key, vars),
     capabilities: {
       pickFolder: async () => '/some/path',
@@ -91,7 +131,7 @@ createApp(App)
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
-import { JinButton, JinTree, type TreeNode } from 'jin-ui'
+import { JinButton, JinTree, type TreeNode } from '@aeroscis/jin'
 
 const nodes = ref<TreeNode[]>([{ id: 'a', label: 'Alpha', hasChildren: true }])
 
@@ -242,12 +282,51 @@ Not a checklist bolted on afterwards — it is why several modules exist at all.
 ## Development
 
 ```bash
-npm install
+npm install           # also builds dist/ (the `prepare` script)
 npm run test          # pure logic + component tests
-npm run check         # the five discipline checks + the contrast audit
+npm run check         # the six discipline checks + the contrast audit
 npm run typecheck
-npm run build         # optional publish artifact
+npm run verify        # all three of the above, in order
+npm run build         # dist/: ESM + .d.ts + source maps
+npm run smoke         # pack the library and build a consumer project against it
 ```
+
+### Packaging
+
+What an application resolves comes from `exports` in `package.json`, and each entry has two
+answers — the built one, and the `source` one a linked checkout asks for:
+
+| Specifier | Registry install | `conditions: ['source']` |
+| --- | --- | --- |
+| `@aeroscis/jin` | `dist/jin.js` + `dist/index.d.ts` | `src/index.ts` — with `customConditions: ['source']` in the consuming `tsconfig.json`, the editor follows too |
+| `@aeroscis/jin/styles.css` | `src/styles/jin.css` | `src/styles/jin.css` |
+| `@aeroscis/jin/themes/*.css` | `themes/*.css` | `themes/*.css` |
+| `@aeroscis/jin/contracts/*.json` | `contracts/*.json` | `contracts/*.json` |
+
+The stylesheet ships as written rather than pre-built: the consumer's bundler minifies it either
+way, and one file that is the same in both modes cannot drift from itself. `npm pack` includes
+`dist/` (ESM, declarations, source maps), `src/` (the stylesheet, and the sources the maps point
+at), `themes/`, `contracts/`, the README, the credits and the licence — 148 files, 239 kB packed.
+
+### Publishing
+
+Not published: 0.1.0 is pre-release and the component API is still moving. The distribution paths
+today are a checkout on the same machine, `npm pack`'s tarball, and a git tag — in that order of
+convenience, and the reverse order of robustness. Hand someone the tarball: it carries `dist/`, so it
+installs with no build step and no lifecycle scripts. A git dependency is built by `prepare` on
+install, which `ignore-scripts` and script-approval policies switch off.
+
+The name is settled for when that changes: **`@aeroscis/jin`**. It is scoped because npm is out of
+good names at this end of the alphabet — `jin` has been taken since 2012 and `jin-ui` since 2022 by
+an unrelated uni-app component library, and npm never recycles a name. `publishConfig.access` is
+`public`, because a scoped package defaults to private and the first publish would otherwise be
+refused.
+
+`npm publish` re-runs the gates first — `prepublishOnly` is `npm run verify && npm run smoke`, and
+`prepare` builds `dist/` — so a release cannot skip them. The smoke test is the one that matters for
+this section: it packs the library, extracts the tarball into a scratch project's `node_modules` as
+a real directory, and builds that project with a config that knows nothing about this checkout.
+Remove the `./styles.css` export, or drop `src` from `files`, and it fails with the reason.
 
 ### Starting the gallery
 
@@ -276,7 +355,9 @@ in use".
 2. no hardcoded colours, radii, shadows, durations or font sizes outside the theme layer;
 3. no business vocabulary anywhere in the library's source;
 4. no library file imports application code;
-5. `jin-` classes, `Jin*` components, `data-jin-*` attributes, and no global element selectors.
+5. `jin-` classes, `Jin*` components, `data-jin-*` attributes, and no global element selectors;
+6. the stylesheet marker the plugin reads is the one `src/styles/jin.css` actually declares — a
+   contract between two files that neither of them states on its own.
 
 `tools/check_contrast.py` separately measures every theme's text and focus colours against the
 surfaces they actually sit on, and fails below 4.5:1 (body text) or 3:1 (focus rings). It composites

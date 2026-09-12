@@ -3,29 +3,26 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 /**
- * The Gallery consumes the library as a `file:` dependency so its SFC sources
- * are compiled by this Vite instance.
+ * The Gallery consumes the library as a `file:` dependency, compiled by this
+ * Vite instance rather than taken from the library's build output — so an edit
+ * to the library shows up here with no rebuild step.
  *
- * Two settings are mandatory for that to work:
- *   - resolve.dedupe: the linked library must not bring a second Vue instance
- *   - server.fs.allow: the dev server must be allowed to read files outside
- *     the Gallery root, because the library lives one directory up
- *
- * Alias order matters: the sub-path aliases come first. A plain string alias
- * matches at a path boundary, so listing `jin-ui` first would swallow
- * `jin-ui/themes/...` and resolve it inside the library entry file.
+ * Three settings are what that needs, and none is optional:
+ *   - resolve.conditions: `source` picks the library's own `.ts`/`.css` entries
+ *     out of its `exports` map instead of `dist/`. One line, and it replaces the
+ *     four-entry alias list this file used to carry — an alias list whose order
+ *     was load-bearing, because a bare `@aeroscis/jin` alias matches at a path boundary
+ *     and swallows `@aeroscis/jin/themes/...` when it is listed first.
+ *   - resolve.dedupe: the linked library imports `vue` from its own directory,
+ *     which would be a second Vue instance; dedupe keeps one.
+ *   - server.fs.allow: the dev server refuses to read files outside the project
+ *     root, and the library lives one directory up.
  */
 export default defineConfig({
   plugins: [vue()],
   resolve: {
+    conditions: ['source'],
     dedupe: ['vue'],
-    alias: [
-      // Point straight at the library sources during development.
-      { find: 'jin-ui/styles', replacement: fileURLToPath(new URL('../src/styles/jin.css', import.meta.url)) },
-      { find: 'jin-ui/themes', replacement: fileURLToPath(new URL('../themes', import.meta.url)) },
-      { find: 'jin-ui/contracts', replacement: fileURLToPath(new URL('../contracts', import.meta.url)) },
-      { find: 'jin-ui', replacement: fileURLToPath(new URL('../src/index.ts', import.meta.url)) },
-    ],
   },
   server: {
     port: 5180,

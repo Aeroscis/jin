@@ -16,7 +16,7 @@ import {
   JinSwitch,
   useNotifications,
   useToasts,
-} from 'jin-ui'
+} from '@aeroscis/jin'
 import { DemoPage, DemoSection, StateGrid } from '../demo/DemoSection'
 
 defineProps<{ section?: string | null }>()

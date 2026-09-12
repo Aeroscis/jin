@@ -1,21 +1,52 @@
 {
-  "name": "jin-ui",
+  "name": "@aeroscis/jin",
   "version": "0.1.1",
-  "private": true,
   "type": "module",
   "description": "Jin (锦) — a token-driven Vue 3 control library. Style axes: data-jin-style + data-jin-mode.",
   "license": "MIT",
+  "author": "Aeroscis",
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://gitee.com/Aeroscis/jin#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitee.com/Aeroscis/jin.git"
+  },
+  "bugs": {
+    "url": "https://gitee.com/Aeroscis/jin/issues"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "component-library",
+    "design-tokens",
+    "theming",
+    "desktop",
+    "accessibility"
+  ],
   "files": [
+    "dist",
     "src",
     "themes",
     "contracts",
-    "README.md"
+    "README.md",
+    "CREDITS.md"
   ],
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/jin.js",
+  "module": "./dist/jin.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": {
+        "source": "./src/index.ts",
+        "default": "./dist/index.d.ts"
+      },
+      "source": "./src/index.ts",
+      "import": "./dist/jin.js",
+      "default": "./dist/jin.js"
+    },
+    "./styles.css": "./src/styles/jin.css",
     "./themes/*": "./themes/*",
     "./contracts/*": "./contracts/*",
     "./package.json": "./package.json"
@@ -30,6 +61,9 @@
     "build": "vite build",
     "check": "python tools/check_tokens.py && python tools/check_contrast.py",
     "verify": "npm run check && npm run test && npm run typecheck",
+    "smoke": "python tools/smoke_pack.py",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run verify && npm run smoke",
     "gallery": "python start_gallery.py",
     "gallery:build": "python start_gallery.py --build",
     "gallery:tauri": "python start_gallery.py --tauri",

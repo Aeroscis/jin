@@ -12,9 +12,9 @@
  * style and never persisted.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { JinAlert, JinBadge, JinButton, JinIcon, JinSelect, JinTextField, JinTooltip } from 'jin-ui'
-import contract from 'jin-ui/contracts/tokens.json'
-import { useTheme } from 'jin-ui'
+import { JinAlert, JinBadge, JinButton, JinIcon, JinSelect, JinTextField, JinTooltip } from '@aeroscis/jin'
+import contract from '@aeroscis/jin/contracts/tokens.json'
+import { useTheme } from '@aeroscis/jin'
 
 interface TokenEntry {
   name: string

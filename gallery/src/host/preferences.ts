@@ -2,7 +2,7 @@
  * Preference persistence. This belongs to the host application — the library
  * deliberately never touches localStorage.
  */
-import type { JinMode } from 'jin-ui'
+import type { JinMode } from '@aeroscis/jin'
 
 const STYLE_KEY = 'jin-gallery.style'
 const MODE_KEY = 'jin-gallery.mode'
