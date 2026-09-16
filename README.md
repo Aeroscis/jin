@@ -29,8 +29,8 @@ the behaviour shared across applications instead of re-implemented per control.
 
 ```bash
 npm install /path/to/jin                  # a checkout on this machine
-npm install ./aeroscis-jin-0.1.0.tgz      # a tarball from `npm pack`
-# No registry release yet — 0.1.0 is pre-release. When there is one it will be
+npm install ./aeroscis-jin-0.3.0.tgz      # a tarball from `npm pack`
+# No registry release yet. When there is one it will be
 # `npm install @aeroscis/jin`; see Packaging for why it is scoped.
 ```
 
@@ -321,11 +321,25 @@ at), `themes/`, `contracts/`, the README, the credits, the changelog and the lic
 
 ### Publishing
 
-Not published: 0.1.0 is pre-release and the component API is still moving. The distribution paths
-today are a checkout on the same machine, `npm pack`'s tarball, and a git tag — in that order of
-convenience, and the reverse order of robustness. Hand someone the tarball: it carries `dist/`, so it
-installs with no build step and no lifecycle scripts. A git dependency is built by `prepare` on
-install, which `ignore-scripts` and script-approval policies switch off.
+Not published yet: the component API is still moving. The distribution paths today are a
+checkout on the same machine, `npm pack`'s tarball, and a git tag — in that order of
+convenience, and the reverse order of robustness. Hand someone the tarball: it carries `dist/`,
+so it installs with no build step and no lifecycle scripts. A git dependency is built by
+`prepare` on install, which `ignore-scripts` and script-approval policies switch off.
+
+The repository lives on Gitee as the primary remote and is mirrored read-only to GitHub
+(`Aeroscis/jin`): `origin` carries two push URLs, so `git push` writes both. The mirror is
+where CI runs — every push and pull request there executes `npm run verify`
+(`.github/workflows/ci.yml`).
+
+Cutting a release stays exactly as [CHANGELOG.md](CHANGELOG.md) describes: one commit on
+`main` that bumps `package.json` and adds the entry, tagged `vX.Y.Z`. Pushing such a tag runs
+`.github/workflows/publish.yml` on the mirror, which publishes with `--provenance` using npm
+trusted publishing (OIDC) — no npm token is stored anywhere. The first publish is the one
+exception: it is done by hand to establish the package and its scope, and the trusted-publisher
+setting (this repository, `publish.yml`) is configured on npmjs.com afterwards. Until that is
+in place, release tags stay local so the tag-triggered workflow is not fired without anything
+to authenticate with.
 
 The name is settled for when that changes: **`@aeroscis/jin`**. It is scoped because npm is out of
 good names at this end of the alphabet — `jin` has been taken since 2012 and `jin-ui` since 2022 by
@@ -357,6 +371,23 @@ free port if something unrelated holds it, and kills the **whole process tree** 
 last part matters more than it sounds: `npm` spawns `node`, which spawns `vite`, so interrupting
 only the parent leaves an orphan holding the port, and the next start then fails with "port already
 in use".
+
+### The gallery is bilingual
+
+The switcher in the header carries three axes — style, mode and language — and the language one
+translates the whole application, including the library's own strings: `main.ts` passes the
+gallery's translator to `app.use(JinUI, { t })`, which is the integration path
+[consuming.md](docs/consuming.md) describes. English is the source language and falls through to the
+library's readable defaults, so an English reader still sees exactly what a consumer who passes no
+`t` at all would see; Simplified Chinese is the worked example, and switching to it changes every
+"Close", "Expand all" and "No data" the controls announce.
+
+The choice persists (`jin-gallery.locale`), a first visit follows `navigator.language`, and
+`<html lang>` follows the choice so the font stack and a screen reader's pronunciation do too.
+Everything lives in `gallery/src/i18n/`: `locales/en.ts` is both the English copy and the key
+space, `locales/zh.ts` is typed against it — a string added without a translation fails the gallery
+typecheck — and `library.ts` covers the keys `contracts/strings.json` declares. A third language is
+one file plus one entry in `LOCALES`.
 
 ### The discipline checks
 
@@ -404,7 +435,7 @@ src/injection/    translation, capabilities, theme, and the plugin that wires th
 src/components/   one .vue file per control
 src/styles/       one stylesheet, rooted at .jin-* only
 tools/         the mechanical checks
-gallery/       the gallery application and its Tauri shell
+gallery/       the gallery application and its Tauri shell — also the en/zh i18n example
 ```
 
 `src/core/` is where the interesting behaviour lives, and it is the part that can be tested without
