@@ -19,7 +19,13 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      // tests/gallery-i18n.spec.ts reaches into the gallery's dictionaries, and
+      // the gallery imports the library by its published name. That resolves
+      // through the `file:..` link in gallery/node_modules, which a CI checkout
+      // does not have, so the mapping stands in for it and the typecheck sees
+      // the module graph the gallery sees.
+      "@aeroscis/jin/*": ["./*"]
     }
   },
   "include": [

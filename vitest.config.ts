@@ -1,12 +1,24 @@
+import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
+
+// The repository root, which is also the library itself.
+const libraryRoot = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Gallery sources import the library by its published name — the consumer
+      // path docs/consuming.md documents. Inside the gallery that name resolves
+      // through the `file:..` link in its own node_modules, which a CI checkout
+      // does not have (gallery/node_modules is ignored), so a test that reaches
+      // into gallery sources has to supply the same resolution. Without it,
+      // tests/gallery-i18n.spec.ts dies on ERR_MODULE_NOT_FOUND while resolving
+      // `@aeroscis/jin/contracts/strings.json`.
+      '@aeroscis/jin': libraryRoot,
     },
   },
   test: {
