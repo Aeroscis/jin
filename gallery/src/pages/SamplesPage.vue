@@ -10,6 +10,10 @@
  *
  * The domain here is deliberately generic — a file workspace — because the
  * library must never see a real one.
+ *
+ * The sample records are stored as keys and translated by a `computed`: this
+ * is the page where a language switch is most visible, since the row titles,
+ * owners, badges and detail labels are all generated rather than typed.
  */
 import { computed, ref } from 'vue'
 import {
@@ -47,29 +51,111 @@ import {
   type TreeNode,
 } from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
+import { useI18n } from '../i18n'
 
 defineProps<{ section?: string | null }>()
 
+const { t } = useI18n()
+
 /* ============================================================ list & detail */
+
+type EntryKind = 'document' | 'spreadsheet' | 'image' | 'archive'
+type EntryState = 'ready' | 'processing' | 'blocked'
+
+interface EntrySpec {
+  id: string
+  titleKey: string
+  kind: EntryKind
+  ownerKey: string
+  updatedKey: string
+  size: string
+  state: EntryState
+  tagKeys: string[]
+}
+
+const entrySpecs: EntrySpec[] = [
+  {
+    id: 'e1',
+    titleKey: 'samples.entries.e1.title',
+    kind: 'document',
+    ownerKey: 'samples.entries.e1.owner',
+    updatedKey: 'samples.entries.e1.updated',
+    size: '2.4 MB',
+    state: 'ready',
+    tagKeys: ['samples.entries.tag.finance', 'samples.entries.tag.shared'],
+  },
+  {
+    id: 'e2',
+    titleKey: 'samples.entries.e2.title',
+    kind: 'spreadsheet',
+    ownerKey: 'samples.entries.e2.owner',
+    updatedKey: 'samples.entries.e2.updated',
+    size: '880 KB',
+    state: 'processing',
+    tagKeys: ['samples.entries.tag.stock'],
+  },
+  {
+    id: 'e3',
+    titleKey: 'samples.entries.e3.title',
+    kind: 'image',
+    ownerKey: 'samples.entries.e3.owner',
+    updatedKey: 'samples.entries.e3.updated',
+    size: '6.1 MB',
+    state: 'ready',
+    tagKeys: ['samples.entries.tag.layout', 'samples.entries.tag.archive'],
+  },
+  {
+    id: 'e4',
+    titleKey: 'samples.entries.e4.title',
+    kind: 'archive',
+    ownerKey: 'samples.entries.e4.owner',
+    updatedKey: 'samples.entries.e4.updated',
+    size: '44 MB',
+    state: 'blocked',
+    tagKeys: ['samples.entries.tag.legacy'],
+  },
+  {
+    id: 'e5',
+    titleKey: 'samples.entries.e5.title',
+    kind: 'document',
+    ownerKey: 'samples.entries.e5.owner',
+    updatedKey: 'samples.entries.e5.updated',
+    size: '12 KB',
+    state: 'ready',
+    tagKeys: ['samples.entries.tag.notes'],
+  },
+]
 
 interface Entry {
   id: string
   title: string
-  kind: 'document' | 'spreadsheet' | 'image' | 'archive'
+  kind: EntryKind
+  kindLabel: string
   owner: string
   updated: string
   size: string
-  state: 'ready' | 'processing' | 'blocked'
+  state: EntryState
+  stateLabel: string
   tags: string[]
 }
 
-const entries = ref<Entry[]>([
-  { id: 'e1', title: 'Quarterly report', kind: 'document', owner: 'Operations', updated: '2 minutes ago', size: '2.4 MB', state: 'ready', tags: ['finance', 'shared'] },
-  { id: 'e2', title: 'Inventory snapshot', kind: 'spreadsheet', owner: 'Warehouse', updated: '1 hour ago', size: '880 KB', state: 'processing', tags: ['stock'] },
-  { id: 'e3', title: 'Floor plan', kind: 'image', owner: 'Facilities', updated: 'Yesterday', size: '6.1 MB', state: 'ready', tags: ['layout', 'archive'] },
-  { id: 'e4', title: 'Legacy export', kind: 'archive', owner: '—', updated: '3 weeks ago', size: '44 MB', state: 'blocked', tags: ['legacy'] },
-  { id: 'e5', title: 'A title long enough to need truncation in the list column', kind: 'document', owner: 'Operations', updated: 'Last month', size: '12 KB', state: 'ready', tags: ['notes'] },
-])
+/** A reload is a state change, not a rewritten record: the timestamp becomes "just now". */
+const refreshed = ref(false)
+
+const entries = computed<Entry[]>(() =>
+  entrySpecs.map((spec) => ({
+    id: spec.id,
+    title: t(spec.titleKey),
+    kind: spec.kind,
+    kindLabel: t(`samples.kind.${spec.kind}`),
+    owner: t(spec.ownerKey),
+    updated: refreshed.value ? t('samples.list.justNow') : t(spec.updatedKey),
+    size: spec.size,
+    state: spec.state,
+    stateLabel: t(`samples.state.${spec.state}`),
+    tags: spec.tagKeys.map((key) => t(key)),
+  })),
+)
 
 const selectedId = ref<string | null>('e1')
 const query = ref('')
@@ -90,36 +176,40 @@ const detailItems = computed<DetailItem[]>(() => {
   const entry = selected.value
   if (!entry) return []
   return [
-    { key: 'kind', label: 'Kind', value: entry.kind },
-    { key: 'owner', label: 'Owner', value: entry.owner },
-    { key: 'size', label: 'Size', value: entry.size },
-    { key: 'updated', label: 'Last updated', value: entry.updated },
-    { key: 'state', label: 'State', value: entry.state },
-    { key: 'tags', label: 'Tags', value: entry.tags.join(', ') },
-    { key: 'path', label: 'Path', value: `/workspace/${entry.id}/${entry.title.replace(/\s+/g, '-').toLowerCase()}` },
+    { key: 'kind', label: t('samples.list.detail.kind'), value: entry.kindLabel },
+    { key: 'owner', label: t('samples.list.detail.owner'), value: entry.owner },
+    { key: 'size', label: t('samples.list.detail.size'), value: entry.size },
+    { key: 'updated', label: t('samples.list.detail.updated'), value: entry.updated },
+    { key: 'state', label: t('samples.list.detail.state'), value: entry.stateLabel },
+    { key: 'tags', label: t('samples.list.detail.tags'), value: entry.tags.join(', ') },
+    {
+      key: 'path',
+      label: t('samples.list.detail.path'),
+      value: `/workspace/${entry.id}/${entry.title.replace(/\s+/g, '-').toLowerCase()}`,
+    },
   ]
 })
 
-const listDetailTabs: TabItem[] = [
-  { value: 'properties', label: 'Properties' },
-  { value: 'activity', label: 'Activity', badge: '4' },
-  { value: 'access', label: 'Access' },
-]
+const listDetailTabs = computed<TabItem[]>(() => [
+  { value: 'properties', label: t('samples.list.properties') },
+  { value: 'activity', label: t('samples.list.activity'), badge: '4' },
+  { value: 'access', label: t('samples.list.access') },
+])
 
-const rowMenu: MenuEntry[] = [
-  { id: 'open', label: 'Open' },
-  { id: 'duplicate', label: 'Duplicate' },
+const rowMenu = computed<MenuEntry[]>(() => [
+  { id: 'open', label: t('samples.list.open') },
+  { id: 'duplicate', label: t('navigation.menu.duplicate') },
   { id: 'sep', type: 'separator' },
-  { id: 'remove', label: 'Remove', danger: true },
-]
+  { id: 'remove', label: t('samples.list.remove'), danger: true },
+])
 
-const listNav: NavItem[] = [
-  { id: 'all', label: 'All entries', icon: 'database', badge: String(entries.value.length) },
-  { id: 'ready', label: 'Ready', icon: 'check' },
-  { id: 'processing', label: 'Processing', icon: 'clock', badge: '1' },
-  { id: 'blocked', label: 'Blocked', icon: 'lock', badge: '1' },
-  { id: 'archive', label: 'Archive', icon: 'file', disabled: true },
-]
+const listNav = computed<NavItem[]>(() => [
+  { id: 'all', label: t('samples.list.allEntries'), icon: 'database', badge: String(entries.value.length) },
+  { id: 'ready', label: t('samples.list.ready'), icon: 'check' },
+  { id: 'processing', label: t('samples.list.processing'), icon: 'clock', badge: '1' },
+  { id: 'blocked', label: t('samples.list.blocked'), icon: 'lock', badge: '1' },
+  { id: 'archive', label: t('samples.list.archive'), icon: 'file', disabled: true },
+])
 const listFilter = ref('all')
 
 const shown = computed(() => {
@@ -131,7 +221,7 @@ function simulateRefresh(): void {
   listLoading.value = true
   setTimeout(() => {
     listLoading.value = false
-    entries.value = entries.value.map((entry) => ({ ...entry, updated: 'just now' }))
+    refreshed.value = true
   }, 1200)
 }
 
@@ -148,11 +238,11 @@ function onRowMenu(entry: Entry): void {
 /* ================================================================ form page */
 
 const form = ref({
-  name: 'Quarterly report',
+  name: t('samples.entries.e1.title'),
   kind: 'document',
-  owner: 'operations',
+  owner: t('samples.entries.e1.owner'),
   retention: '90',
-  notes: 'Imported from the finance export.',
+  notes: t('samples.form.notesContent'),
   notify: true,
   review: false,
   visibility: 'team',
@@ -161,31 +251,35 @@ const form = ref({
 const formErrors = ref<Record<string, string>>({})
 const formSaved = ref(false)
 
-const kindOptions = [
-  { value: 'document', label: 'Document' },
-  { value: 'spreadsheet', label: 'Spreadsheet' },
-  { value: 'image', label: 'Image' },
-  { value: 'archive', label: 'Archive' },
-]
+const kindOptions = computed(() => [
+  { value: 'document', label: t('samples.kind.document') },
+  { value: 'spreadsheet', label: t('samples.kind.spreadsheet') },
+  { value: 'image', label: t('samples.kind.image') },
+  { value: 'archive', label: t('samples.kind.archive') },
+])
 
-const retentionOptions = [
-  { value: '30', label: '30 days' },
-  { value: '90', label: '90 days' },
-  { value: '365', label: 'One year' },
-  { value: '0', label: 'Keep indefinitely' },
-]
+const retentionOptions = computed(() => [
+  { value: '30', label: t('samples.form.retention.30') },
+  { value: '90', label: t('samples.form.retention.90') },
+  { value: '365', label: t('samples.form.retention.365') },
+  { value: '0', label: t('samples.form.retention.0') },
+])
 
-const visibilityOptions = [
-  { value: 'private', label: 'Only me', hint: 'Nobody else can see this entry' },
-  { value: 'team', label: 'My team', hint: 'Everyone in the team can read it' },
-  { value: 'org', label: 'Whole organisation', hint: 'Readable by anyone in the account' },
-]
+const visibilityOptions = computed(() => [
+  {
+    value: 'private',
+    label: t('samples.form.visibility.private'),
+    hint: t('samples.form.visibility.privateHint'),
+  },
+  { value: 'team', label: t('samples.form.visibility.team'), hint: t('samples.form.visibility.teamHint') },
+  { value: 'org', label: t('samples.form.visibility.org'), hint: t('samples.form.visibility.orgHint') },
+])
 
 function validate(): boolean {
   const next: Record<string, string> = {}
-  if (!form.value.name.trim()) next['name'] = 'A name is required.'
-  else if (form.value.name.length > 60) next['name'] = 'Keep it under 60 characters.'
-  if (!form.value.owner.trim()) next['owner'] = 'An owner is required.'
+  if (!form.value.name.trim()) next['name'] = t('samples.form.errorNameRequired')
+  else if (form.value.name.length > 60) next['name'] = t('samples.form.errorNameLength')
+  if (!form.value.owner.trim()) next['owner'] = t('samples.form.errorOwnerRequired')
   formErrors.value = next
   return Object.keys(next).length === 0
 }
@@ -256,15 +350,15 @@ function resetFlow(): void {
 const flowLabel = computed(() => {
   switch (step.value) {
     case 'idle':
-      return 'Three steps: review, options, run. Two of them are overlays.'
+      return t('samples.flow.idle')
     case 'review':
-      return 'Step 1 of 3 — review the selection.'
+      return t('samples.flow.reviewStep')
     case 'options':
-      return 'Step 2 of 3 — choose how it runs.'
+      return t('samples.flow.optionsStep')
     case 'running':
-      return 'Step 3 of 3 — running.'
+      return t('samples.flow.runningStep')
     case 'done':
-      return 'Finished. Focus returned to the trigger each time an overlay closed.'
+      return t('samples.flow.doneStep')
   }
 })
 
@@ -274,6 +368,15 @@ const flowLabel = computed(() => {
  * contract expects a host application to do for a one-off screen element.
  */
 const flowSteps = ['review', 'options', 'running', 'done'] as const
+const STEP_LABEL_KEYS: Record<Step, string> = {
+  idle: 'samples.flow.stepIdle',
+  review: 'samples.flow.stepReview',
+  options: 'samples.flow.stepOptions',
+  running: 'samples.flow.stepRunning',
+  done: 'samples.flow.stepDone',
+}
+const stepLabel = computed(() => t(STEP_LABEL_KEYS[step.value]))
+const flowStepLabels = computed(() => flowSteps.map((id) => t(STEP_LABEL_KEYS[id])))
 const stepIndex = computed(() => flowSteps.indexOf(step.value as (typeof flowSteps)[number]))
 
 function flowStepStyle(index: number): Record<string, string> {
@@ -296,68 +399,80 @@ function flowStepStyle(index: number): Record<string, string> {
 
 /* =========================================================== state screens */
 
-const stateNodes: TreeNode[] = [
-  { id: 'empty-folder', label: 'Empty folder', children: [] },
-  { id: 'broken', label: 'Branch that fails to load', hasChildren: true },
-]
+const stateNodes = computed<TreeNode[]>(() => [
+  { id: 'empty-folder', label: t('samples.states.emptyFolder'), children: [] },
+  { id: 'broken', label: t('samples.states.failingBranch'), hasChildren: true },
+])
 function stateLoad(): Promise<TreeNode[]> {
-  return new Promise((_, reject) => setTimeout(() => reject(new Error('Unavailable')), 600))
+  return new Promise((_, reject) =>
+    setTimeout(() => reject(new Error(t('samples.states.unavailable'))), 600),
+  )
 }
 </script>
 
 <template>
-  <DemoPage
-    title="Application samples"
-    lead="Four screens built only from library components. They exist to answer the question isolated controls cannot: does the set hold together as an interface?"
-  >
+  <DemoPage :title="t('samples.title')" :lead="t('samples.lead')">
     <!-- =================================================== list & detail -->
-    <DemoSection
-      id="list-detail"
-      title="List and detail"
-      note="A three-region workspace: navigation, a filterable list, and a properties panel. Every control is from the library — the search field, the nav, the toolbar, the tabs, the detail list, the dropdown and the messages."
-      stacked
-    >
+    <DemoSection id="list-detail" :title="t('samples.list.title')" :note="t('samples.list.note')" stacked>
       <div class="gallery-app-frame">
         <div class="gallery-app-frame__chrome">
           <JinBreadcrumb
             :items="[
-              { label: 'Workspace', onClick: () => undefined },
-              { label: 'Entries', current: true },
+              { label: t('samples.list.workspace'), onClick: () => undefined },
+              { label: t('samples.list.entries'), current: true },
             ]"
           />
           <span style="flex: 1 1 auto" />
-          <JinTooltip content="Reload the list" placement="bottom">
-            <JinButton size="sm" variant="ghost" icon label="Reload" :loading="listLoading" @click="simulateRefresh">
+          <JinTooltip :content="t('samples.list.reloadTooltip')" placement="bottom">
+            <JinButton
+              size="sm"
+              variant="ghost"
+              icon
+              :label="t('samples.list.reload')"
+              :loading="listLoading"
+              @click="simulateRefresh"
+            >
               <template #icon><JinIcon name="refresh" /></template>
             </JinButton>
           </JinTooltip>
           <JinButton size="sm" variant="primary">
             <template #icon><JinIcon name="plus" /></template>
-            New entry
+            {{ t('samples.list.newEntry') }}
           </JinButton>
         </div>
 
         <div class="gallery-app-frame__body">
           <div class="gallery-app-frame__col gallery-app-frame__col--alt">
-            <JinNav :items="listNav" :current="listFilter" aria-label="Entry filters" @select="(item) => (listFilter = item.id)" />
+            <JinNav
+              :items="listNav"
+              :current="listFilter"
+              :aria-label="t('samples.list.filtersAria')"
+              @select="(item) => (listFilter = item.id)"
+            />
             <JinDivider spaced />
-            <JinCard title="Storage" elevation="flat">
-              <JinProgress :value="68" label="68% of quota" size="sm" />
+            <JinCard :title="t('samples.list.storage')" elevation="flat">
+              <JinProgress :value="68" :label="t('samples.list.quota')" size="sm" />
             </JinCard>
           </div>
 
           <div class="gallery-app-frame__col">
             <div class="jin-stack">
-              <JinSearchField v-model="query" placeholder="Search entries…" />
+              <JinSearchField v-model="query" :placeholder="t('samples.list.searchPlaceholder')" />
 
               <div v-if="listLoading" class="jin-stack">
                 <JinSkeleton v-for="row in 4" :key="row" variant="rect" height="52px" />
               </div>
 
               <div v-else-if="shown.length === 0" class="jin-stack">
-                <JinResult status="empty" title="Nothing here" description="No entries match this filter.">
+                <JinResult
+                  status="empty"
+                  :title="t('samples.list.nothingTitle')"
+                  :description="t('samples.list.nothingDescription')"
+                >
                   <template #actions>
-                    <JinButton size="sm" variant="primary" @click="query = ''; listFilter = 'all'">Clear the filter</JinButton>
+                    <JinButton size="sm" variant="primary" @click="query = ''; listFilter = 'all'">
+                      {{ t('samples.list.clearFilter') }}
+                    </JinButton>
                   </template>
                 </JinResult>
               </div>
@@ -380,15 +495,17 @@ function stateLoad(): Promise<TreeNode[]> {
                   />
                   <span class="gallery-list-row__main">
                     <span class="gallery-list-row__title">{{ entry.title }}</span>
-                    <span class="gallery-list-row__meta">{{ entry.owner }} · {{ entry.updated }} · {{ entry.size }}</span>
+                    <span class="gallery-list-row__meta">
+                      {{ entry.owner }} · {{ entry.updated }} · {{ entry.size }}
+                    </span>
                   </span>
                   <JinBadge
                     :tone="entry.state === 'ready' ? 'success' : entry.state === 'processing' ? 'warning' : 'danger'"
-                    :label="entry.state"
+                    :label="entry.stateLabel"
                   />
-                  <JinDropdown :items="rowMenu" aria-label="Row actions" @select="() => onRowMenu(entry)">
+                  <JinDropdown :items="rowMenu" :aria-label="t('samples.list.rowMenuAria')" @select="() => onRowMenu(entry)">
                     <template #trigger>
-                      <JinButton size="sm" variant="ghost" icon label="Row actions">
+                      <JinButton size="sm" variant="ghost" icon :label="t('samples.list.rowActions')">
                         <template #icon><JinIcon name="menu" /></template>
                       </JinButton>
                     </template>
@@ -406,7 +523,7 @@ function stateLoad(): Promise<TreeNode[]> {
                     {{ selected.title }}
                   </p>
                   <p class="gallery-muted" style="margin: var(--jin-space-1) 0 0">
-                    {{ selected.kind }} · {{ selected.size }}
+                    {{ selected.kindLabel }} · {{ selected.size }}
                   </p>
                 </div>
 
@@ -416,13 +533,13 @@ function stateLoad(): Promise<TreeNode[]> {
 
                 <JinDivider />
 
-                <JinTabs v-model="detailTab" :items="listDetailTabs" aria-label="Entry details">
+                <JinTabs v-model="detailTab" :items="listDetailTabs" :aria-label="t('samples.list.detailsAria')">
                   <template #properties>
                     <JinDetailList :items="detailItems" :bordered="false" compact>
                       <template #value="{ item }">
                         <JinBadge
                           v-if="item.key === 'state'"
-                          :tone="String(item.value) === 'ready' ? 'success' : String(item.value) === 'processing' ? 'warning' : 'danger'"
+                          :tone="selected.state === 'ready' ? 'success' : selected.state === 'processing' ? 'warning' : 'danger'"
                           :label="String(item.value)"
                         />
                         <span v-else :class="{ 'gallery-mono': item.key === 'path' }">{{ item.value }}</span>
@@ -431,89 +548,119 @@ function stateLoad(): Promise<TreeNode[]> {
                   </template>
                   <template #activity>
                     <div class="jin-stack">
-                      <JinAlert tone="info" title="Imported" description="From the finance export, 2 minutes ago." />
-                      <JinAlert tone="neutral" title="Tags updated" description="Added “shared”." />
+                      <JinAlert
+                        tone="info"
+                        :title="t('samples.list.importedTitle')"
+                        :description="t('samples.list.importedDescription')"
+                      />
+                      <JinAlert
+                        tone="neutral"
+                        :title="t('samples.list.tagsUpdatedTitle')"
+                        :description="t('samples.list.tagsUpdatedDescription')"
+                      />
                     </div>
                   </template>
                   <template #access>
                     <JinAlert
                       tone="warning"
-                      title="Two people have access"
-                      description="The owner and the operations group."
+                      :title="t('samples.list.accessTitle')"
+                      :description="t('samples.list.accessDescription')"
                     />
                   </template>
                 </JinTabs>
               </div>
             </template>
 
-            <JinResult v-else status="empty" description="Select an entry to see its properties." />
+            <JinResult v-else status="empty" :description="t('samples.list.selectEntry')" />
           </div>
         </div>
       </div>
 
-      <JinModal v-model="rowMenuOpen" title="Row action" :description="rowMenuTarget ? `Chosen from “${rowMenuTarget.title}”.` : ''">
-        <p class="gallery-muted">
-          In a real application this would be the confirmation for the chosen row action. The point is
-          that the menu, the dialog and the message all come from the same library.
-        </p>
+      <JinModal
+        v-model="rowMenuOpen"
+        :title="t('samples.list.rowActionTitle')"
+        :description="rowMenuTarget ? t('samples.list.rowActionDescription', { title: rowMenuTarget.title }) : ''"
+      >
+        <p class="gallery-muted">{{ t('samples.list.rowActionBody') }}</p>
         <template #footer>
-          <JinButton @click="rowMenuOpen = false">Close</JinButton>
+          <JinButton @click="rowMenuOpen = false">{{ t('common.close') }}</JinButton>
         </template>
       </JinModal>
     </DemoSection>
 
     <!-- ========================================================= form page -->
-    <DemoSection
-      id="form"
-      title="Form page"
-      note="A single-column form with validation that produces real errors, hints that explain consequences, and a required marker that is announced rather than merely drawn."
-      stacked
-    >
+    <DemoSection id="form" :title="t('samples.form.title')" :note="t('samples.form.note')" stacked>
       <div class="gallery-app-frame">
         <div class="gallery-app-frame__chrome">
-          <span style="font-weight: var(--jin-font-weight-medium)">Entry details</span>
+          <span style="font-weight: var(--jin-font-weight-medium)">{{ t('samples.form.chrome') }}</span>
           <span style="flex: 1 1 auto" />
-          <JinBadge v-if="formSaved" tone="success" label="saved" />
+          <JinBadge v-if="formSaved" tone="success" :label="t('samples.form.savedBadge')" />
         </div>
 
         <div class="gallery-app-frame__body gallery-app-frame__body--form">
-          <JinCard class="gallery-form-card" title="Entry" description="Press Save with an empty name to see the validation path.">
+          <JinCard
+            class="gallery-form-card"
+            :title="t('samples.form.cardTitle')"
+            :description="t('samples.form.cardDescription')"
+          >
             <form class="jin-stack" style="gap: var(--jin-space-4)" @submit.prevent="saveForm">
-              <JinField label="Name" :error="formErrors.name" hint="Shown wherever this entry appears." required>
-                <JinTextField v-model="form.name" placeholder="Entry name" clearable :maxlength="60" show-count />
+              <JinField
+                :label="t('samples.form.name')"
+                :error="formErrors.name"
+                :hint="t('samples.form.nameHint')"
+                required
+              >
+                <JinTextField
+                  v-model="form.name"
+                  :placeholder="t('samples.form.namePlaceholder')"
+                  clearable
+                  :maxlength="60"
+                  show-count
+                />
               </JinField>
 
-              <JinField label="Owner" :error="formErrors.owner" required>
-                <JinTextField v-model="form.owner" placeholder="Team or person" />
+              <JinField :label="t('samples.form.owner')" :error="formErrors.owner" required>
+                <JinTextField v-model="form.owner" :placeholder="t('samples.form.ownerPlaceholder')" />
               </JinField>
 
-              <JinField label="Kind">
+              <JinField :label="t('samples.form.kind')">
                 <JinSelect v-model="form.kind" :options="kindOptions" />
               </JinField>
 
-              <JinField label="Retention" hint="After this period the entry is archived automatically.">
+              <JinField :label="t('samples.form.retention')" :hint="t('samples.form.retentionHint')">
                 <JinSelect v-model="form.retention" :options="retentionOptions" />
               </JinField>
 
-              <JinField label="Visibility" :optional="true">
+              <JinField :label="t('samples.form.visibility')" :optional="true">
                 <JinRadioGroup v-model="form.visibility" :options="visibilityOptions" />
               </JinField>
 
-              <JinField label="Notes" :optional="true">
-                <JinTextField v-model="form.notes" multiline autosize :rows="3" :max-rows="6" placeholder="Anything worth remembering" />
+              <JinField :label="t('samples.form.notes')" :optional="true">
+                <JinTextField
+                  v-model="form.notes"
+                  multiline
+                  autosize
+                  :rows="3"
+                  :max-rows="6"
+                  :placeholder="t('samples.form.notesPlaceholder')"
+                />
               </JinField>
 
               <JinDivider />
 
               <div class="jin-stack" style="gap: var(--jin-space-2)">
-                <JinCheckbox v-model="form.notify" label="Notify watchers" hint="Sends one message when the entry changes." />
-                <JinCheckbox v-model="form.review" label="Require review before publishing" />
-                <JinSwitch v-model="form.notify" label="Also notify on deletion" />
+                <JinCheckbox
+                  v-model="form.notify"
+                  :label="t('samples.form.notify')"
+                  :hint="t('samples.form.notifyHint')"
+                />
+                <JinCheckbox v-model="form.review" :label="t('samples.form.review')" />
+                <JinSwitch v-model="form.notify" :label="t('samples.form.notifyOnDelete')" />
               </div>
 
               <div style="display: flex; gap: var(--jin-space-2)">
-                <JinButton type="submit" variant="primary">Save</JinButton>
-                <JinButton type="button" variant="ghost" @click="resetForm">Reset</JinButton>
+                <JinButton type="submit" variant="primary">{{ t('common.save') }}</JinButton>
+                <JinButton type="button" variant="ghost" @click="resetForm">{{ t('common.reset') }}</JinButton>
               </div>
             </form>
           </JinCard>
@@ -521,13 +668,13 @@ function stateLoad(): Promise<TreeNode[]> {
           <JinAlert
             v-if="formSaved"
             tone="success"
-            title="Saved"
-            description="The form passed validation and reported success."
+            :title="t('samples.form.savedTitle')"
+            :description="t('samples.form.savedDescription')"
           />
           <JinAlert
             v-else-if="Object.keys(formErrors).length > 0"
             tone="danger"
-            title="Please fix the fields above"
+            :title="t('samples.form.fixFieldsTitle')"
             :description="Object.values(formErrors).join(' ')"
           />
         </div>
@@ -535,42 +682,48 @@ function stateLoad(): Promise<TreeNode[]> {
     </DemoSection>
 
     <!-- ====================================================== flow screen -->
-    <DemoSection
-      id="flow"
-      title="A flow that crosses a modal and a drawer"
-      note="Review in a modal, configure in a drawer, run behind a progress bar. Focus returns to the triggering button after each overlay closes, so the keyboard user never loses their place."
-      stacked
-    >
+    <DemoSection id="flow" :title="t('samples.flow.title')" :note="t('samples.flow.note')" stacked>
       <div class="gallery-app-frame">
         <div class="gallery-app-frame__chrome">
-          <span style="font-weight: var(--jin-font-weight-medium)">Maintenance</span>
+          <span style="font-weight: var(--jin-font-weight-medium)">{{ t('samples.flow.chrome') }}</span>
           <span style="flex: 1 1 auto" />
           <JinBadge
             :tone="step === 'done' ? 'success' : step === 'running' ? 'warning' : 'neutral'"
-            :label="step"
+            :label="stepLabel"
           />
         </div>
 
         <div style="padding: var(--jin-space-6); display: grid; place-items: center; min-height: 260px">
           <div class="jin-stack" style="max-width: 560px; width: 100%; align-items: flex-start">
-            <JinAlert tone="info" title="What this screen shows" :description="flowLabel" />
+            <JinAlert tone="info" :title="t('samples.flow.whatThisShows')" :description="flowLabel" />
 
             <div class="gallery-flow-steps">
-              <span v-for="(entry, index) in flowSteps" :key="entry" class="jin-cluster" :style="flowStepStyle(index)">
+              <span
+                v-for="(label, index) in flowStepLabels"
+                :key="label"
+                class="jin-cluster"
+                :style="flowStepStyle(index)"
+              >
                 <span aria-hidden="true">{{ stepIndex > index ? '✓' : index + 1 }}</span>
-                <span>{{ entry }}</span>
+                <span>{{ label }}</span>
               </span>
             </div>
 
             <div v-if="step === 'running'" style="width: 100%">
-              <JinProgress :value="progress" label="Running the job" />
+              <JinProgress :value="progress" :label="t('samples.flow.runningLabel')" />
             </div>
 
             <div v-if="step === 'done'" style="width: 100%">
-              <JinResult status="success" title="Maintenance finished" description="Nothing needed attention."
-                :style="{ padding: 0 }">
+              <JinResult
+                status="success"
+                :title="t('samples.flow.finishedTitle')"
+                :description="t('samples.flow.finishedDescription')"
+                :style="{ padding: 0 }"
+              >
                 <template #actions>
-                  <JinButton variant="primary" size="sm" @click="resetFlow">Run again</JinButton>
+                  <JinButton variant="primary" size="sm" @click="resetFlow">
+                    {{ t('samples.flow.runAgain') }}
+                  </JinButton>
                 </template>
               </JinResult>
             </div>
@@ -578,9 +731,9 @@ function stateLoad(): Promise<TreeNode[]> {
             <div v-if="step === 'idle'" style="display: flex; gap: var(--jin-space-2)">
               <JinButton variant="primary" @click="startFlow">
                 <template #icon><JinIcon name="play" /></template>
-                Start maintenance
+                {{ t('samples.flow.start') }}
               </JinButton>
-              <JinButton variant="ghost" @click="resetFlow">Reset</JinButton>
+              <JinButton variant="ghost" @click="resetFlow">{{ t('common.reset') }}</JinButton>
             </div>
           </div>
         </div>
@@ -589,90 +742,102 @@ function stateLoad(): Promise<TreeNode[]> {
 
     <JinModal
       v-model="reviewOpen"
-      title="Step 1 — review what will be touched"
-      description="This dialog is optional to read but hard to skip: the focus trap makes sure it is seen."
+      :title="t('samples.flow.reviewTitle')"
+      :description="t('samples.flow.reviewDescription')"
       size="md"
     >
       <div class="jin-stack">
         <JinAlert
           tone="warning"
-          title="4 entries will be archived"
-          description="Archived entries stay readable but leave every list and search result."
+          :title="t('samples.flow.archivedWarningTitle')"
+          :description="t('samples.flow.archivedWarningDescription')"
         />
         <JinDetailList
           :items="[
-            { key: 'scope', label: 'Scope', value: 'Entries last opened more than a year ago' },
-            { key: 'count', label: 'Entries', value: '4' },
-            { key: 'reversible', label: 'Reversible', value: 'Yes, for 30 days' },
+            { key: 'scope', label: t('samples.flow.scope'), value: t('samples.flow.scopeValue') },
+            { key: 'count', label: t('samples.flow.count'), value: '4' },
+            { key: 'reversible', label: t('samples.flow.reversible'), value: t('samples.flow.reversibleValue') },
           ]"
         />
       </div>
 
       <template #footer>
-        <JinButton variant="ghost" @click="reviewOpen = false; step = 'idle'">Cancel</JinButton>
-        <JinButton variant="primary" @click="confirmReview">Continue</JinButton>
+        <JinButton variant="ghost" @click="reviewOpen = false; step = 'idle'">
+          {{ t('common.cancel') }}
+        </JinButton>
+        <JinButton variant="primary" @click="confirmReview">{{ t('common.continue') }}</JinButton>
       </template>
     </JinModal>
 
     <JinDrawer
       v-model="optionsOpen"
-      title="Step 2 — how should it run?"
-      description="A drawer, because these options are a side quest rather than the main decision."
+      :title="t('samples.flow.optionsTitle')"
+      :description="t('samples.flow.optionsDescription')"
       side="right"
       size="md"
     >
       <div class="jin-stack">
-        <JinSwitch v-model="flowOptions.verbose" label="Detailed output" />
-        <JinSwitch v-model="flowOptions.failFast" label="Stop at the first problem" />
-        <JinSwitch v-model="flowOptions.notify" label="Send a notification when it finishes" />
+        <JinSwitch v-model="flowOptions.verbose" :label="t('samples.flow.verbose')" />
+        <JinSwitch v-model="flowOptions.failFast" :label="t('samples.flow.failFast')" />
+        <JinSwitch v-model="flowOptions.notify" :label="t('samples.flow.notifyOnFinish')" />
         <JinDivider />
         <JinAlert
           tone="info"
-          title="Escape or the scrim closes this drawer"
-          description="Closing without confirming leaves the flow where it was, and focus goes back to the Continue button."
+          :title="t('samples.flow.drawerAlertTitle')"
+          :description="t('samples.flow.drawerAlertDescription')"
         />
       </div>
 
       <template #footer>
-        <JinButton variant="ghost" @click="optionsOpen = false; step = 'review'">Back</JinButton>
-        <JinButton variant="primary" @click="confirmOptions">Run maintenance</JinButton>
+        <JinButton variant="ghost" @click="optionsOpen = false; step = 'review'">
+          {{ t('common.back') }}
+        </JinButton>
+        <JinButton variant="primary" @click="confirmOptions">{{ t('samples.flow.run') }}</JinButton>
       </template>
     </JinDrawer>
 
     <!-- ==================================================== state screens -->
-    <DemoSection
-      id="states"
-      title="Empty, error and loading"
-      note="The three states every screen eventually needs. They are not afterthoughts: the empty state offers the action that fills it, the error state says what to do next, and the loading state holds the final layout."
-      stacked
-    >
+    <DemoSection id="states" :title="t('samples.states.title')" :note="t('samples.states.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinCard title="Empty" description="Say what would be here, and offer the way to create it.">
-          <JinResult status="empty" title="No entries yet" description="Entries appear here once something is imported.">
+        <JinCard
+          :title="t('samples.states.emptyTitle')"
+          :description="t('samples.states.emptyDescription')"
+        >
+          <JinResult
+            status="empty"
+            :title="t('samples.states.emptyResultTitle')"
+            :description="t('samples.states.emptyResultDescription')"
+          >
             <template #actions>
-              <JinButton variant="primary" size="sm">Import a file</JinButton>
-              <JinButton variant="ghost" size="sm">Create one manually</JinButton>
+              <JinButton variant="primary" size="sm">{{ t('samples.states.importFile') }}</JinButton>
+              <JinButton variant="ghost" size="sm">{{ t('samples.states.createManually') }}</JinButton>
             </template>
           </JinResult>
         </JinCard>
 
-        <JinCard title="Error" description="Say what failed and what to do. Never a bare code.">
+        <JinCard
+          :title="t('samples.states.errorTitle')"
+          :description="t('samples.states.errorDescription')"
+        >
           <JinResult
             status="danger"
-            title="The service is not responding"
-            description="It may be starting up. Retrying usually works within a few seconds."
+            :title="t('samples.states.errorResultTitle')"
+            :description="t('samples.states.errorResultDescription')"
           >
             <template #actions>
               <JinButton variant="primary" size="sm">
                 <template #icon><JinIcon name="refresh" /></template>
-                Retry
+                {{ t('common.retry') }}
               </JinButton>
-              <JinButton variant="ghost" size="sm">View the log</JinButton>
+              <JinButton variant="ghost" size="sm">{{ t('samples.states.viewLog') }}</JinButton>
             </template>
           </JinResult>
         </JinCard>
 
-        <JinCard title="Loading" description="Hold the shape of the content that is coming.">
+        <JinCard
+          :title="t('samples.states.loadingTitle')"
+          :description="t('samples.states.loadingDescription')"
+        >
           <div class="jin-stack">
             <div style="display: flex; gap: var(--jin-space-3); align-items: center">
               <JinSkeleton variant="circle" width="40px" height="40px" />
@@ -689,28 +854,26 @@ function stateLoad(): Promise<TreeNode[]> {
           </div>
         </JinCard>
 
-        <JinCard title="Partial failure" description="One region can fail while the rest of the page works.">
+        <JinCard
+          :title="t('samples.states.partialTitle')"
+          :description="t('samples.states.partialDescription')"
+        >
           <div class="jin-stack">
             <JinAlert
               tone="danger"
-              title="One branch could not load"
-              description="The rest of the list is usable. Retrying the failed branch is safe."
+              :title="t('samples.states.partialAlertTitle')"
+              :description="t('samples.states.partialAlertDescription')"
             />
-            <JinTree :nodes="stateNodes" :load="stateLoad" aria-label="Partially loaded tree" />
+            <JinTree :nodes="stateNodes" :load="stateLoad" :aria-label="t('samples.states.treeAria')" />
           </div>
         </JinCard>
       </div>
     </DemoSection>
 
     <!-- ============================================================== RTL -->
-    <DemoSection
-      id="rtl"
-      title="Right-to-left and long text"
-      note="The same screen with direction flipped. Layout comes from logical properties where it matters, horizontal arrow keys swap meaning, and long strings truncate instead of breaking the layout."
-      stacked
-    >
+    <DemoSection id="rtl" :title="t('samples.rtl.title')" :note="t('samples.rtl.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinCard title="RTL form" description="Labels, fields and the toolbar mirror without a second stylesheet.">
+        <JinCard :title="t('samples.rtl.formTitle')" :description="t('samples.rtl.formDescription')">
           <div class="gallery-rtl">
             <div class="jin-stack">
               <JinField label="اسم الإدخال" hint="يظهر هذا الاسم في كل القوائم." required>
@@ -730,25 +893,22 @@ function stateLoad(): Promise<TreeNode[]> {
           </div>
         </JinCard>
 
-        <JinCard title="Long content" description="Truncation, wrapping and the counter.">
+        <JinCard :title="t('samples.rtl.longTitle')" :description="t('samples.rtl.longDescription')">
           <div class="jin-stack">
-            <JinField label="A label long enough to wrap onto a second line and keep going">
-              <JinTextField
-                model-value="A value long enough that the input has to truncate it rather than push its own clear button out of the visible field"
-                clearable
-              />
+            <JinField :label="t('samples.rtl.longLabel')">
+              <JinTextField :model-value="t('samples.rtl.longValue')" clearable />
             </JinField>
             <JinDetailList
               :items="[
-                { key: 'a', label: 'A field label that is itself rather long', value: 'and a value that is even longer, wrapping across lines instead of overflowing its column' },
-                { key: 'b', label: 'Short', value: 'short' },
+                { key: 'a', label: t('samples.rtl.detailLabel'), value: t('samples.rtl.detailValue') },
+                { key: 'b', label: t('samples.rtl.shortLabel'), value: t('samples.rtl.shortValue') },
               ]"
             />
-            <JinTag label="a tag label that will not fit in narrow columns" />
+            <JinTag :label="t('samples.rtl.tagLabel')" />
             <JinAlert
               tone="warning"
-              title="A title that keeps going well past the point where a single line would have ended, to show wrapping"
-              description="And a description after it."
+              :title="t('samples.rtl.alertTitle')"
+              :description="t('samples.rtl.alertDescription')"
             />
           </div>
         </JinCard>

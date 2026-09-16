@@ -10,11 +10,16 @@
  *
  * Overrides are temporary by design: they are written to the element's inline
  * style and never persisted.
+ *
+ * Token names, groups and descriptions come from the contract and stay as they
+ * are — they are identifiers an application reads in its own stylesheet, not
+ * copy. Everything around them is translated.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { JinAlert, JinBadge, JinButton, JinIcon, JinSelect, JinTextField, JinTooltip } from '@aeroscis/jin'
 import contract from '@aeroscis/jin/contracts/tokens.json'
 import { useTheme } from '@aeroscis/jin'
+import { useI18n } from '../i18n'
 
 interface TokenEntry {
   name: string
@@ -25,6 +30,7 @@ interface TokenEntry {
 
 const tokens = (contract as { tokens: TokenEntry[] }).tokens
 
+const { t } = useI18n()
 const theme = useTheme()
 const values = ref<Record<string, string>>({})
 const overrides = ref<Record<string, string>>({})
@@ -39,7 +45,7 @@ const groups = computed(() => {
 })
 
 const groupOptions = computed(() => [
-  { value: 'all', label: `All groups (${tokens.length})` },
+  { value: 'all', label: t('tokens.allGroups', { count: tokens.length }) },
   ...groups.value.map((group) => ({
     value: group,
     label: `${group} (${tokens.filter((token) => token.group === group).length})`,
@@ -144,49 +150,59 @@ defineExpose({ refresh })
 
 <template>
   <article class="gallery-page">
-    <h1 class="gallery-page__title">Design tokens</h1>
-    <p class="gallery-page__lead">
-      Every token in the contract, with its current computed value and where that value comes from.
-      Change the style or mode above and this list re-reads itself — that is the point: a theme is
-      only valid when all {{ tokens.length }} rows show a real value and none fall back.
-    </p>
+    <h1 class="gallery-page__title">{{ t('app.nav.tokens') }}</h1>
+    <p class="gallery-page__lead">{{ t('tokens.lead', { count: tokens.length }) }}</p>
 
     <JinAlert
       v-if="missing.length > 0"
       tone="danger"
-      title="The current theme is incomplete"
-      :description="`${missing.length} token(s) have no value: ${missing.slice(0, 6).join(', ')}`"
+      :title="t('tokens.missingTitle')"
+      :description="
+        missing.length === 1
+          ? t('tokens.missingDescriptionOne', { count: missing.length, names: missing.slice(0, 6).join(', ') })
+          : t('tokens.missingDescriptionOther', { count: missing.length, names: missing.slice(0, 6).join(', ') })
+      "
     />
     <JinAlert
       v-else
       tone="success"
-      title="Theme complete"
-      :description="`All ${tokens.length} contract tokens resolve in style “${theme.style.value}”, mode “${theme.mode.value}”.`"
+      :title="t('tokens.completeTitle')"
+      :description="
+        t('tokens.completeDescription', {
+          count: tokens.length,
+          style: theme.style.value,
+          mode: t(theme.mode.value === 'dark' ? 'app.mode.dark' : 'app.mode.light'),
+        })
+      "
     />
 
     <section class="gallery-section">
       <div class="gallery-demo gallery-demo--stack">
         <div class="gallery-grid gallery-grid--two">
-          <JinTextField v-model="filter" placeholder="Filter by name, description or value" clearable>
+          <JinTextField v-model="filter" :placeholder="t('tokens.filterPlaceholder')" clearable>
             <template #prefix><JinIcon name="search" /></template>
           </JinTextField>
-          <JinSelect v-model="groupFilter" :options="groupOptions" aria-label="Token group" />
+          <JinSelect v-model="groupFilter" :options="groupOptions" :aria-label="t('tokens.groupAria')" />
         </div>
 
         <div class="gallery-demo" style="justify-content: space-between">
           <span class="gallery-muted">
-            Showing {{ visible.length }} of {{ tokens.length }} tokens ·
-            {{ overrideCount }} live override{{ overrideCount === 1 ? '' : 's' }}
+            {{ t('tokens.showing', { visible: visible.length, total: tokens.length }) }} ·
+            {{
+              overrideCount === 1
+                ? t('tokens.overridesOne', { count: overrideCount })
+                : t('tokens.overridesOther', { count: overrideCount })
+            }}
           </span>
           <span style="display: flex; gap: var(--jin-space-2); align-items: center">
             <label style="display: inline-flex; align-items: center; gap: var(--jin-space-2)">
               <input v-model="showOnlyOverridden" type="checkbox" />
-              <span class="gallery-muted">Only overridden</span>
+              <span class="gallery-muted">{{ t('tokens.onlyOverridden') }}</span>
             </label>
-            <JinTooltip content="Remove every live override" placement="top">
+            <JinTooltip :content="t('tokens.clearAllTooltip')" placement="top">
               <JinButton variant="secondary" size="sm" :disabled="overrideCount === 0" @click="clearAll">
                 <template #icon><JinIcon name="refresh" /></template>
-                Reset overrides
+                {{ t('tokens.resetOverrides') }}
               </JinButton>
             </JinTooltip>
           </span>
@@ -210,32 +226,32 @@ defineExpose({ refresh })
 
             <span class="gallery-token__names">
               <span class="gallery-token__name" :title="token.description">{{ token.name }}</span>
-              <span class="gallery-token__value">{{ values[token.name] || '(missing — fallback in use)' }}</span>
+              <span class="gallery-token__value">{{ values[token.name] || t('tokens.missingValue') }}</span>
             </span>
 
             <span style="display: flex; align-items: center; gap: var(--jin-space-1)">
               <JinBadge
                 v-if="sourceOf(token) === 'override'"
                 tone="accent"
-                label="override"
+                :label="t('tokens.override')"
                 style="text-transform: none"
               />
               <JinTextField
                 class="gallery-token__override"
                 size="sm"
                 :model-value="overrides[token.name] ?? ''"
-                placeholder="override"
-                :aria-label="`Override ${token.name}`"
+                :placeholder="t('tokens.override')"
+                :aria-label="t('tokens.overrideLabel', { name: token.name })"
                 @update:model-value="(value: string) => override(token, value)"
               />
-              <JinTooltip content="Clear this override" placement="top">
+              <JinTooltip :content="t('tokens.clearTooltip')" placement="top">
                 <JinButton
                   class="gallery-token__reset"
                   variant="ghost"
                   size="sm"
                   icon
                   :disabled="!overrides[token.name]"
-                  :label="`Reset ${token.name}`"
+                  :label="t('tokens.resetLabel', { name: token.name })"
                   @click="clearOverride(token)"
                 >
                   <template #icon><JinIcon name="close" /></template>
@@ -254,13 +270,8 @@ defineExpose({ refresh })
       invisible public API.
     -->
     <section class="gallery-section">
-      <h2 class="gallery-section__title">Decoration utilities</h2>
-      <p class="gallery-section__note">
-        Three opt-in classes consume the tokens above. The library never applies them on its own —
-        except the ground weave, which it uses for empty states, because a pattern cannot compete
-        with content that is not there. Each theme decides what these render as; a theme with
-        <code class="gallery-mono">--jin-surface-texture: none</code> simply gets a flat surface.
-      </p>
+      <h2 class="gallery-section__title">{{ t('tokens.decoration.title') }}</h2>
+      <p class="gallery-section__note">{{ t('tokens.decoration.note') }}</p>
 
       <div class="gallery-grid gallery-grid--three">
         <div class="jin-card jin-ground" style="padding: var(--jin-space-4)">
@@ -268,18 +279,18 @@ defineExpose({ refresh })
             .jin-ground
           </p>
           <p class="gallery-muted" style="margin: 0; font-size: var(--jin-font-size-sm)">
-            The woven ground, from <code class="gallery-mono">--jin-surface-texture</code>.
+            {{ t('tokens.groundNote') }}
           </p>
         </div>
 
         <div class="jin-card" style="padding: var(--jin-space-4)">
           <p class="gallery-mono" style="margin: 0 0 var(--jin-space-1); font-size: var(--jin-font-size-sm)">
-            surface gradient
+            {{ t('tokens.gradientLabel') }}
           </p>
           <p class="gallery-muted" style="margin: 0 0 var(--jin-space-3); font-size: var(--jin-font-size-sm)">
-            Every panel already carries <code class="gallery-mono">--jin-surface-gradient</code>.
+            {{ t('tokens.gradientNote') }}
           </p>
-          <JinButton variant="secondary" size="sm">A raised surface</JinButton>
+          <JinButton variant="secondary" size="sm">{{ t('tokens.gradientButton') }}</JinButton>
         </div>
 
         <div class="jin-card jin-sheen" style="padding: var(--jin-space-4)">
@@ -287,15 +298,13 @@ defineExpose({ refresh })
             .jin-sheen
           </p>
           <p class="gallery-muted" style="margin: 0; font-size: var(--jin-font-size-sm)">
-            One narrow highlight crosses on hover or focus. Nothing animates unattended.
+            {{ t('tokens.sheenNote') }}
           </p>
         </div>
       </div>
 
       <div class="gallery-demo gallery-demo--stack" style="margin-top: var(--jin-space-4)">
-        <p class="gallery-muted" style="margin: 0">
-          Border and focus hierarchy, all from three tokens:
-        </p>
+        <p class="gallery-muted" style="margin: 0">{{ t('tokens.borderNote') }}</p>
         <div class="gallery-grid gallery-grid--three">
           <div class="gallery-demo" style="border-color: var(--jin-border-color)">--jin-border-color</div>
           <div class="gallery-demo" style="border-color: var(--jin-border-color-strong)">--jin-border-color-strong</div>
@@ -311,24 +320,22 @@ defineExpose({ refresh })
         </div>
         <hr class="jin-rule-thread" style="width: 100%; margin: var(--jin-space-2) 0" />
         <p class="gallery-muted" style="margin: 0; font-size: var(--jin-font-size-sm)">
-          <code class="gallery-mono">.jin-rule-thread</code> — a decorative separator built from the
-          border and focus tokens. The focus ring is declared separately from the accent in every
-          theme, so no style can erase keyboard focus by choosing its colours badly.
+          {{ t('tokens.ruleThreadNote') }}
         </p>
       </div>
 
       <JinAlert
         tone="neutral"
-        title="Where the rationale lives"
-        description="This page shows what the tokens are; the reasoning behind a given style belongs with the design documentation, not in the component catalogue. Each style's one-line identity is in the switcher above, and the full Jin theme specification is in docs/theming.md."
+        :title="t('tokens.rationaleTitle')"
+        :description="t('tokens.rationaleDescription')"
       />
     </section>
 
     <JinAlert
       v-if="visible.length === 0"
       tone="neutral"
-      title="No tokens match the filter"
-      description="Clear the filter or pick a different group."
+      :title="t('tokens.noMatchTitle')"
+      :description="t('tokens.noMatchDescription')"
     />
   </article>
 </template>

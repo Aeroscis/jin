@@ -5,6 +5,9 @@
  * Every demo opens the real control, so the focus trap, Escape handling and
  * focus return can be verified by hand. The status line under each group
  * reports what the control just told the application.
+ *
+ * Option labels derived from strings are `computed`: a language switch has to
+ * reach the open dialog and the select that is already on screen.
  */
 import { computed, ref } from 'vue'
 import {
@@ -23,8 +26,11 @@ import {
   JinTooltip,
 } from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
+import { useI18n } from '../i18n'
 
 defineProps<{ section?: string | null }>()
+
+const { t } = useI18n()
 
 const log = ref<string[]>([])
 function record(message: string): void {
@@ -39,20 +45,20 @@ const modalNoEsc = ref(false)
 const modalNoOutside = ref(false)
 const modalHideClose = ref(false)
 
-const sizeOptions = [
-  { value: 'sm', label: 'sm — 380px' },
-  { value: 'md', label: 'md — 520px' },
-  { value: 'lg', label: 'lg — 720px' },
-  { value: 'xl', label: 'xl — 960px' },
-  { value: 'full', label: 'full — the whole viewport' },
-]
+const sizeOptions = computed(() => [
+  { value: 'sm', label: t('overlays.size.sm') },
+  { value: 'md', label: t('overlays.size.md') },
+  { value: 'lg', label: t('overlays.size.lg') },
+  { value: 'xl', label: t('overlays.size.xl') },
+  { value: 'full', label: t('overlays.size.full') },
+])
 
 async function simulateSave(): Promise<void> {
   modalBusy.value = true
   await new Promise((resolve) => setTimeout(resolve, 1400))
   modalBusy.value = false
   modalOpen.value = false
-  record('modal: save finished, dialog closed')
+  record(t('overlays.modal.logSaved'))
 }
 
 // ------------------------------------------------------------------ drawer
@@ -60,22 +66,24 @@ const drawerOpen = ref(false)
 const drawerSide = ref<'left' | 'right' | 'top' | 'bottom'>('right')
 const drawerSize = ref<'sm' | 'md' | 'lg' | 'xl'>('md')
 
-const sideOptions = [
-  { value: 'left', label: 'left' },
-  { value: 'right', label: 'right' },
-  { value: 'top', label: 'top' },
-  { value: 'bottom', label: 'bottom' },
-]
-const drawerSizeOptions = [
-  { value: 'sm', label: 'sm — 320px' },
-  { value: 'md', label: 'md — 420px' },
-  { value: 'lg', label: 'lg — 560px' },
-  { value: 'xl', label: 'xl — 760px' },
-]
+const sideOptions = computed(() => [
+  { value: 'left', label: t('overlays.side.left') },
+  { value: 'right', label: t('overlays.side.right') },
+  { value: 'top', label: t('overlays.side.top') },
+  { value: 'bottom', label: t('overlays.side.bottom') },
+])
+const drawerSizeOptions = computed(() => [
+  { value: 'sm', label: t('overlays.drawerSize.sm') },
+  { value: 'md', label: t('overlays.drawerSize.md') },
+  { value: 'lg', label: t('overlays.drawerSize.lg') },
+  { value: 'xl', label: t('overlays.drawerSize.xl') },
+])
 
 // ------------------------------------------------------------------ popover
 const popoverOpen = ref(false)
 const popoverPlacement = ref<'bottom-start' | 'bottom' | 'right' | 'top-end'>('bottom-start')
+// Placement values are API terms — they are what the `placement` prop takes,
+// so they stay as they are in every language.
 const popoverPlacements = [
   { value: 'bottom-start', label: 'bottom-start' },
   { value: 'bottom', label: 'bottom' },
@@ -94,36 +102,35 @@ const outerModal = ref(false)
 </script>
 
 <template>
-  <DemoPage
-    title="Overlays"
-    lead="Everything that floats above the page shares one portal container, one positioning implementation and one dismissal implementation. That is why nested overlays close in the right order and why the z-indexes never fight."
-  >
-    <DemoSection
-      title="Modal"
-      note="Centred dialog. Focus moves inside on open, Tab cycles within it, Escape closes it, and focus returns to the button that opened it. Both Escape and scrim-click can be switched off independently."
-      stacked
-    >
+  <DemoPage :title="t('overlays.title')" :lead="t('overlays.lead')">
+    <DemoSection :title="t('overlays.modal.title')" :note="t('overlays.modal.note')" stacked>
       <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-4); align-items: flex-end">
-        <JinSelect v-model="modalSize" :options="sizeOptions" :block="false" aria-label="Modal size" style="min-width: 200px" />
+        <JinSelect
+          v-model="modalSize"
+          :options="sizeOptions"
+          :block="false"
+          :aria-label="t('overlays.modal.sizeAria')"
+          style="min-width: 200px"
+        />
         <label style="display: inline-flex; align-items: center; gap: var(--jin-space-2)">
-          <JinSwitch v-model="modalNoEsc" size="sm" label="Escape disabled" />
+          <JinSwitch v-model="modalNoEsc" size="sm" :label="t('overlays.modal.escapeDisabled')" />
         </label>
         <label style="display: inline-flex; align-items: center; gap: var(--jin-space-2)">
-          <JinSwitch v-model="modalNoOutside" size="sm" label="Scrim click disabled" />
+          <JinSwitch v-model="modalNoOutside" size="sm" :label="t('overlays.modal.scrimDisabled')" />
         </label>
         <label style="display: inline-flex; align-items: center; gap: var(--jin-space-2)">
-          <JinSwitch v-model="modalHideClose" size="sm" label="Hide close button" />
+          <JinSwitch v-model="modalHideClose" size="sm" :label="t('overlays.modal.hideClose')" />
         </label>
         <JinButton variant="primary" @click="modalOpen = true">
           <template #icon><JinIcon name="external" /></template>
-          Open modal
+          {{ t('overlays.modal.open') }}
         </JinButton>
       </div>
 
       <JinAlert
         v-if="log.length > 0"
         tone="neutral"
-        title="What the controls reported"
+        :title="t('overlays.modal.reportedTitle')"
         :description="log.join(' · ')"
       />
     </DemoSection>
@@ -131,8 +138,8 @@ const outerModal = ref(false)
     <JinModal
       v-model="modalOpen"
       :size="modalSize"
-      title="Publish this revision?"
-      description="Publishing makes the revision visible to everyone with access."
+      :title="t('overlays.modal.dialogTitle')"
+      :description="t('overlays.modal.dialogDescription')"
       :close-on-esc="!modalNoEsc"
       :close-on-outside="!modalNoOutside"
       :hide-close="modalHideClose"
@@ -141,255 +148,271 @@ const outerModal = ref(false)
       <div class="gallery-grid">
         <JinAlert
           tone="info"
-          title="Try the keyboard"
-          description="Tab cycles between the controls below. Escape closes unless it is switched off. The focus ring never disappears."
+          :title="t('overlays.modal.tryKeyboardTitle')"
+          :description="t('overlays.modal.tryKeyboardDescription')"
         />
-        <JinField label="Revision note" hint="Shown in the history panel." required>
+        <JinField
+          :label="t('overlays.modal.noteLabel')"
+          :hint="t('overlays.modal.noteHint')"
+          required
+        >
           <template #default="{ field }">
-            <JinTextField :id="field.controlId" placeholder="What changed?" />
+            <JinTextField :id="field.controlId" :placeholder="t('overlays.modal.notePlaceholder')" />
           </template>
         </JinField>
-        <JinField label="Notify watchers">
-          <JinSwitch label="Send a message when it is published" />
+        <JinField :label="t('overlays.modal.notifyLabel')">
+          <JinSwitch :label="t('overlays.modal.notifySwitch')" />
         </JinField>
       </div>
 
       <template #footer>
-        <JinButton variant="ghost" :disabled="modalBusy" @click="modalOpen = false">Cancel</JinButton>
+        <JinButton variant="ghost" :disabled="modalBusy" @click="modalOpen = false">
+          {{ t('common.cancel') }}
+        </JinButton>
         <JinButton variant="primary" :loading="modalBusy" @click="simulateSave">
-          {{ modalBusy ? 'Publishing…' : 'Publish' }}
+          {{ modalBusy ? t('overlays.modal.publishing') : t('overlays.modal.publish') }}
         </JinButton>
       </template>
     </JinModal>
 
-    <DemoSection
-      title="Nested overlays"
-      note="A modal opened from a modal. Escape closes the topmost one first, and the shared scrim does not double-darken."
-    >
-      <JinButton variant="secondary" @click="outerModal = true">Open the outer modal</JinButton>
-      <JinButton variant="primary" @click="nestedModal = true">Open a second modal</JinButton>
-      <span class="gallery-muted">Both can be open at once.</span>
+    <DemoSection :title="t('overlays.nested.title')" :note="t('overlays.nested.note')">
+      <JinButton variant="secondary" @click="outerModal = true">
+        {{ t('overlays.nested.openOuter') }}
+      </JinButton>
+      <JinButton variant="primary" @click="nestedModal = true">
+        {{ t('overlays.nested.openSecond') }}
+      </JinButton>
+      <span class="gallery-muted">{{ t('overlays.nested.bothOpen') }}</span>
     </DemoSection>
 
-    <JinModal v-model="outerModal" title="Outer dialog" description="This one owns the scrim.">
+    <JinModal
+      v-model="outerModal"
+      :title="t('overlays.nested.outerTitle')"
+      :description="t('overlays.nested.outerDescription')"
+    >
       <div class="gallery-grid">
-        <p>Press Escape: the topmost dialog closes first, not both at once.</p>
-        <JinButton variant="secondary" @click="nestedModal = true">Open another on top</JinButton>
+        <p>{{ t('overlays.nested.outerBody') }}</p>
+        <JinButton variant="secondary" @click="nestedModal = true">
+          {{ t('overlays.nested.openAnother') }}
+        </JinButton>
       </div>
       <template #footer>
-        <JinButton @click="outerModal = false">Close</JinButton>
+        <JinButton @click="outerModal = false">{{ t('common.close') }}</JinButton>
       </template>
     </JinModal>
 
-    <JinModal v-model="nestedModal" title="Second dialog" description="Stacked above the first, no extra scrim." no-scrim>
-      <p>Both are registered in the same stack; this one is on top and receives Escape first.</p>
-      <template #footer>
-        <JinButton variant="primary" @click="nestedModal = false">Close this one</JinButton>
-      </template>
-    </JinModal>
-
-    <DemoSection
-      title="Drawer"
-      note="Edge-anchored panel in four directions and four widths. Same dismissal and focus contract as the modal."
-      stacked
+    <JinModal
+      v-model="nestedModal"
+      :title="t('overlays.nested.secondTitle')"
+      :description="t('overlays.nested.secondDescription')"
+      no-scrim
     >
+      <p>{{ t('overlays.nested.secondBody') }}</p>
+      <template #footer>
+        <JinButton variant="primary" @click="nestedModal = false">
+          {{ t('overlays.nested.closeThisOne') }}
+        </JinButton>
+      </template>
+    </JinModal>
+
+    <DemoSection :title="t('overlays.drawer.title')" :note="t('overlays.drawer.note')" stacked>
       <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-3); align-items: flex-end">
-        <JinSelect v-model="drawerSide" :options="sideOptions" :block="false" aria-label="Drawer side" style="min-width: 140px" />
-        <JinSelect v-model="drawerSize" :options="drawerSizeOptions" :block="false" aria-label="Drawer size" style="min-width: 180px" />
+        <JinSelect
+          v-model="drawerSide"
+          :options="sideOptions"
+          :block="false"
+          :aria-label="t('overlays.drawer.sideAria')"
+          style="min-width: 140px"
+        />
+        <JinSelect
+          v-model="drawerSize"
+          :options="drawerSizeOptions"
+          :block="false"
+          :aria-label="t('overlays.drawer.sizeAria')"
+          style="min-width: 180px"
+        />
         <JinButton variant="primary" @click="drawerOpen = true">
           <template #icon><JinIcon name="folder" /></template>
-          Open drawer
+          {{ t('overlays.drawer.open') }}
         </JinButton>
         <JinButton variant="secondary" @click="() => { drawerSide = 'bottom'; drawerOpen = true }">
-          Bottom sheet
+          {{ t('overlays.drawer.bottomSheet') }}
         </JinButton>
         <JinButton variant="secondary" @click="() => { drawerSide = 'top'; drawerOpen = true }">
-          Top sheet
+          {{ t('overlays.drawer.topSheet') }}
         </JinButton>
       </div>
     </DemoSection>
 
     <JinDrawer
       v-model="drawerOpen"
-      title="Filters"
-      description="Changes apply as soon as you close this panel."
+      :title="t('overlays.drawer.panelTitle')"
+      :description="t('overlays.drawer.panelDescription')"
       :side="drawerSide"
       :size="drawerSize"
     >
       <div class="gallery-grid">
-        <JinField label="Kind">
+        <JinField :label="t('overlays.drawer.kind')">
           <JinSelect
             :options="[
-              { value: 'any', label: 'Any' },
-              { value: 'folded', label: 'Folded' },
-              { value: 'hidden', label: 'Hidden' },
+              { value: 'any', label: t('overlays.drawer.kindAny') },
+              { value: 'folded', label: t('overlays.drawer.kindFolded') },
+              { value: 'hidden', label: t('overlays.drawer.kindHidden') },
             ]"
             model-value="any"
           />
         </JinField>
-        <JinField label="Name contains">
-          <JinTextField placeholder="Substring" clearable />
+        <JinField :label="t('overlays.drawer.nameContains')">
+          <JinTextField :placeholder="t('overlays.drawer.namePlaceholder')" clearable />
         </JinField>
         <JinDivider />
-        <JinSwitch label="Include nested items" />
-        <JinSwitch label="Only changed since last run" />
+        <JinSwitch :label="t('overlays.drawer.includeNested')" />
+        <JinSwitch :label="t('overlays.drawer.onlyChanged')" />
       </div>
       <template #footer>
-        <JinButton variant="ghost" @click="drawerOpen = false">Cancel</JinButton>
-        <JinButton variant="primary" @click="drawerOpen = false">Apply</JinButton>
+        <JinButton variant="ghost" @click="drawerOpen = false">{{ t('common.cancel') }}</JinButton>
+        <JinButton variant="primary" @click="drawerOpen = false">{{ t('common.apply') }}</JinButton>
       </template>
     </JinDrawer>
 
-    <DemoSection
-      title="Popover"
-      note="Arbitrary anchored content. The anchor is measured, the placement flips when there is no room, and the element shifts to stay inside the viewport."
-      stacked
-    >
+    <DemoSection :title="t('overlays.popover.title')" :note="t('overlays.popover.note')" stacked>
       <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-3); align-items: center">
         <JinSelect
           v-model="popoverPlacement"
           :options="popoverPlacements"
           :block="false"
-          aria-label="Placement"
+          :aria-label="t('overlays.popover.placementAria')"
           style="min-width: 180px"
         />
         <JinPopover
           :model-value="popoverOpen"
           :placement="popoverPlacement"
           arrow
-          aria-label="Anchored panel"
+          :aria-label="t('overlays.popover.anchorAria')"
           @update:model-value="(value: boolean) => (popoverOpen = value)"
         >
           <template #anchor="{ open, toggle }">
             <JinButton variant="secondary" @click="toggle()">
               <template #icon><JinIcon name="filter" /></template>
-              {{ open ? 'Hide panel' : 'Show panel' }}
+              {{ open ? t('overlays.popover.hide') : t('overlays.popover.show') }}
             </JinButton>
           </template>
 
           <div style="padding: var(--jin-space-4); width: 260px">
             <p style="margin: 0 0 var(--jin-space-2); font-weight: var(--jin-font-weight-medium)">
-              Anchored content
+              {{ t('overlays.popover.heading') }}
             </p>
             <p class="gallery-muted" style="margin: 0 0 var(--jin-space-3)">
-              Any content belongs here: a form, a list, a colour note. Escape and outside clicks close
-              it, and the anchor itself is exempt so the trigger does not fight the dismissal.
+              {{ t('overlays.popover.body') }}
             </p>
-            <JinButton size="sm" variant="primary" @click="popoverOpen = false">Done</JinButton>
+            <JinButton size="sm" variant="primary" @click="popoverOpen = false">
+              {{ t('overlays.popover.done') }}
+            </JinButton>
           </div>
         </JinPopover>
 
-        <span class="gallery-muted">Resize the window while it is open — the panel follows.</span>
+        <span class="gallery-muted">{{ t('overlays.popover.resizeHint') }}</span>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Tooltip"
-      note="Hover or focus. Deliberately non-interactive and never the only place information lives: it opens after a delay, closes promptly, and touch input reaches it through focus."
-    >
-      <JinTooltip content="Saved 4 minutes ago" placement="top">
+    <DemoSection :title="t('overlays.tooltip.title')" :note="t('overlays.tooltip.note')">
+      <JinTooltip :content="t('overlays.tooltip.saved')" placement="top">
         <JinButton variant="ghost" size="sm">
           <template #icon><JinIcon name="clock" /></template>
-          Hover or focus me
+          {{ t('overlays.tooltip.hoverMe') }}
         </JinButton>
       </JinTooltip>
 
-      <JinTooltip content="This one opens immediately" :open-delay="0" placement="top">
-        <JinButton variant="ghost" size="sm">No delay</JinButton>
+      <JinTooltip :content="t('overlays.tooltip.noDelayContent')" :open-delay="0" placement="top">
+        <JinButton variant="ghost" size="sm">{{ t('overlays.tooltip.noDelay') }}</JinButton>
       </JinTooltip>
 
-      <JinTooltip content="Still here after a second of hovering" :close-delay="1000" placement="bottom">
-        <JinButton variant="ghost" size="sm">Lingering close</JinButton>
+      <JinTooltip :content="t('overlays.tooltip.lingeringContent')" :close-delay="1000" placement="bottom">
+        <JinButton variant="ghost" size="sm">{{ t('overlays.tooltip.lingering') }}</JinButton>
       </JinTooltip>
 
-      <JinTooltip content="Disabled tooltips explain why a control is unavailable" placement="right">
-        <JinButton variant="ghost" size="sm" disabled>Disabled control</JinButton>
+      <JinTooltip :content="t('overlays.tooltip.disabledContent')" placement="right">
+        <JinButton variant="ghost" size="sm" disabled>{{ t('overlays.tooltip.disabledControl') }}</JinButton>
       </JinTooltip>
 
       <JinTooltip placement="top">
         <JinButton variant="ghost" size="sm">
           <template #icon><JinIcon name="info" /></template>
-          Rich content
+          {{ t('overlays.tooltip.rich') }}
         </JinButton>
         <template #content>
-          <span>A tooltip can hold markup, but must stay non-interactive.</span>
+          <span>{{ t('overlays.tooltip.richBody') }}</span>
         </template>
       </JinTooltip>
     </DemoSection>
 
-    <DemoSection
-      title="Popconfirm"
-      note="Inline confirmation for an action that is reversible but not free. Focus lands on the confirm button so a keyboard user is never stranded, and Escape cancels."
-      stacked
-    >
+    <DemoSection :title="t('overlays.popconfirm.title')" :note="t('overlays.popconfirm.note')" stacked>
       <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-3)">
         <JinPopconfirm
-          title="Remove this filter?"
-          description="The filter is not saved anywhere, so this cannot be undone."
+          :title="t('overlays.popconfirm.removeTitle')"
+          :description="t('overlays.popconfirm.removeDescription')"
           :tone="popconfirmTone"
           placement="top"
-          @confirm="record('popconfirm: confirmed')"
-          @cancel="record('popconfirm: cancelled')"
+          @confirm="record(t('overlays.popconfirm.logConfirmed'))"
+          @cancel="record(t('overlays.popconfirm.logCancelled'))"
         >
           <template #anchor="{ toggle }">
             <JinButton :variant="popconfirmTone === 'danger' ? 'danger' : 'secondary'" @click="toggle()">
               <template #icon><JinIcon name="trash" /></template>
-              Delete filter
+              {{ t('overlays.popconfirm.deleteFilter') }}
             </JinButton>
           </template>
         </JinPopconfirm>
 
         <JinPopconfirm
           v-model="confirmBasic"
-          title="Overwrite the existing file?"
-          confirm-label="Overwrite"
-          cancel-label="Keep both"
+          :title="t('overlays.popconfirm.overwriteTitle')"
+          :confirm-label="t('overlays.popconfirm.overwrite')"
+          :cancel-label="t('overlays.popconfirm.keepBoth')"
           placement="bottom"
-          @confirm="record('popconfirm: overwritten')"
+          @confirm="record(t('overlays.popconfirm.logOverwritten'))"
         >
           <template #anchor="{ toggle }">
-            <JinButton variant="secondary" @click="toggle()">Overwrite…</JinButton>
+            <JinButton variant="secondary" @click="toggle()">
+              {{ t('overlays.popconfirm.overwriteTrigger') }}
+            </JinButton>
           </template>
         </JinPopconfirm>
 
         <JinButton variant="ghost" @click="confirmDanger = !confirmDanger">
-          Toggle danger styling ({{ confirmDanger ? 'on' : 'off' }})
+          {{ t('overlays.popconfirm.toggleDanger', { state: t(confirmDanger ? 'common.on' : 'common.off') }) }}
         </JinButton>
       </div>
 
       <JinAlert
         v-if="log.length > 0"
         tone="neutral"
-        title="Reported events"
+        :title="t('overlays.popconfirm.reportedTitle')"
         :description="log.join(' · ')"
       />
     </DemoSection>
 
-    <DemoSection
-      title="What the application must not re-implement"
-      note="These four behaviours exist exactly once in the library. Any overlay added later inherits them instead of re-solving them."
-      stacked
-    >
+    <DemoSection :title="t('overlays.boundary.title')" :note="t('overlays.boundary.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
         <JinAlert
           tone="success"
-          title="One positioning module"
-          description="Anchor measurement, flip when the preferred side overflows, shift to stay inside the viewport, and arrow placement. Pure geometry, unit tested without a browser."
+          :title="t('overlays.boundary.positioningTitle')"
+          :description="t('overlays.boundary.positioningDescription')"
         />
         <JinAlert
           tone="success"
-          title="One focus module"
-          description="Where focus enters, how Tab cycles, and where it returns. Never a detached node, never the body."
+          :title="t('overlays.boundary.focusTitle')"
+          :description="t('overlays.boundary.focusDescription')"
         />
         <JinAlert
           tone="success"
-          title="One dismissal module"
-          description="Escape and outside-click, with the topmost-only rule so nested overlays close one at a time."
+          :title="t('overlays.boundary.dismissalTitle')"
+          :description="t('overlays.boundary.dismissalDescription')"
         />
         <JinAlert
           tone="success"
-          title="One portal and stack"
-          description="A single container, six z-index layers from tokens. No z-index escalation in application code."
+          :title="t('overlays.boundary.portalTitle')"
+          :description="t('overlays.boundary.portalDescription')"
         />
       </div>
     </DemoSection>

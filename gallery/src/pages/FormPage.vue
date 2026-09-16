@@ -5,6 +5,12 @@
  *
  * Every control demonstrates its states, including the ones that are easy to
  * forget: disabled, read-only, invalid, long text, and inside a field wrapper.
+ *
+ * Two kinds of text live here and they behave differently on purpose. Option
+ * lists and hints are interface copy, so they are `computed` and follow the
+ * language switcher. Values already typed into a field, and the burst of
+ * past events under the recorder, are state: the first is the user's, and the
+ * second is a record of what happened, so both keep their words.
  */
 import { computed, ref } from 'vue'
 import {
@@ -24,20 +30,22 @@ import {
   serializeHotkey,
   type HotkeyBinding,
   type HotkeyParts,
+  type TranslateVars,
 } from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
+import { useI18n } from '../i18n'
 
 defineProps<{ section?: string | null }>()
 
+const { t } = useI18n()
+
 // ------------------------------------------------------------- form model
 const basicText = ref('')
-const withValue = ref('Initial value')
-const longValue = ref(
-  'A deliberately long value that has to be truncated with an ellipsis rather than pushing the clear button out of the field',
-)
+const withValue = ref(t('forms.text.initialValue'))
+const longValue = ref(t('forms.text.longValueContent'))
 const invalidText = ref('not-an-address')
 const search = ref('')
-const searchResult = ref('')
+const searchResult = ref<{ key: string; vars?: TranslateVars } | null>(null)
 const selectValue = ref<string | null>('fold')
 const nativeSelectValue = ref<string | null>('fold')
 const richSelectValue = ref<string | null>('md')
@@ -51,29 +59,31 @@ const toggledOff = ref(false)
 const bio = ref('')
 const counter = ref('')
 
-const selectOptions = [
-  { value: 'normal', label: 'Normal — shown as-is' },
-  { value: 'fold', label: 'Folded — collapsed in the list' },
-  { value: 'hide', label: 'Hidden — excluded entirely' },
-  { value: 'archived', label: 'Archived — kept but de-emphasised', disabled: true },
-]
+const selectOptions = computed(() => [
+  { value: 'normal', label: t('forms.select.optionNormal') },
+  { value: 'fold', label: t('forms.select.optionFolded') },
+  { value: 'hide', label: t('forms.select.optionHidden') },
+  { value: 'archived', label: t('forms.select.optionArchived'), disabled: true },
+])
 
-const richOptions = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-]
+const richOptions = computed(() => [
+  { value: 'sm', label: t('forms.select.optionSmall') },
+  { value: 'md', label: t('forms.select.optionMedium') },
+  { value: 'lg', label: t('forms.select.optionLarge') },
+])
 
-const radioOptions = [
-  { value: 'normal', label: 'Normal', hint: 'Index everything under this node' },
-  { value: 'fold', label: 'Folded', hint: 'Keep the node, hide its contents' },
-  { value: 'hide', label: 'Hidden', hint: 'Exclude the node and its children' },
-  { value: 'inherit', label: 'Inherit from parent', disabled: true },
-]
+const radioOptions = computed(() => [
+  { value: 'normal', label: t('forms.radio.optionNormal'), hint: t('forms.radio.optionNormalHint') },
+  { value: 'fold', label: t('forms.radio.optionFolded'), hint: t('forms.radio.optionFoldedHint') },
+  { value: 'hide', label: t('forms.radio.optionHidden'), hint: t('forms.radio.optionHiddenHint') },
+  { value: 'inherit', label: t('forms.radio.optionInherit'), disabled: true },
+])
 
 // ------------------------------------------------------------ hotkey demo
 const recorded = ref('Ctrl+Shift+K')
-const events = ref<string[]>([])
+const events = ref<{ key: string; vars?: TranslateVars }[]>([])
+const eventText = computed(() => events.value.map((entry) => t(entry.key, entry.vars)).join(' · '))
+
 const bindings: HotkeyBinding[] = [
   { id: 'save', hotkey: { ctrl: true, alt: false, shift: false, meta: false, key: 'S' } },
   { id: 'open', hotkey: { ctrl: true, alt: false, shift: false, meta: false, key: 'O' } },
@@ -94,16 +104,20 @@ function parse(value: string): HotkeyParts | null {
   return parts.key ? parts : null
 }
 
+function pushEvent(entry: { key: string; vars?: TranslateVars }): void {
+  events.value = [entry, ...events.value].slice(0, 4)
+}
+
 function onRecord(serialized: string, parts: HotkeyParts): void {
-  events.value = [`recorded ${serialized} (${spoken(parts)})`, ...events.value].slice(0, 4)
+  pushEvent({ key: 'forms.hotkey.recorded', vars: { keys: serialized, spoken: spoken(parts) } })
 }
 
 function onConflict(ids: string[]): void {
-  events.value = [`conflict with ${ids.join(', ')}`, ...events.value].slice(0, 4)
+  pushEvent({ key: 'forms.hotkey.conflict', vars: { ids: ids.join(', ') } })
 }
 
 function onInvalid(parts: HotkeyParts): void {
-  events.value = [`rejected ${spoken(parts)} — needs a modifier`, ...events.value].slice(0, 4)
+  pushEvent({ key: 'forms.hotkey.rejected', vars: { spoken: spoken(parts) } })
 }
 
 function spoken(parts: HotkeyParts): string {
@@ -111,185 +125,204 @@ function spoken(parts: HotkeyParts): string {
 }
 
 function submitDemo(): void {
-  events.value = ['form submitted', ...events.value].slice(0, 4)
+  pushEvent({ key: 'forms.complete.submitted' })
 }
+
+const modifiers = computed(() => {
+  const parts = recordedParts.value
+  if (!parts) return t('forms.hotkey.noModifiers')
+  const names = [
+    parts.ctrl && 'Ctrl',
+    parts.alt && 'Alt',
+    parts.shift && 'Shift',
+    parts.meta && 'Meta',
+  ].filter(Boolean) as string[]
+  return names.join('+') || t('forms.hotkey.noModifiers')
+})
+
+const searchHint = computed(() =>
+  searchResult.value ? t(searchResult.value.key, searchResult.value.vars) : t('forms.search.debouncedHint'),
+)
 </script>
 
 <template>
-  <DemoPage
-    title="Forms"
-    lead="One field container carries the label, hint, error and required wiring, so every control stays small and every form stays consistent. Validation state is aria-invalid plus visible error text — never colour alone."
-  >
-    <DemoSection
-      title="Field"
-      note="The composition container. It generates the ids, publishes them through provide/inject, and the control inside picks them up automatically."
-      stacked
-    >
+  <DemoPage :title="t('forms.title')" :lead="t('forms.lead')">
+    <DemoSection :title="t('forms.field.title')" :note="t('forms.field.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinField label="Plain label">
-          <JinTextField placeholder="No hint, no error" />
+        <JinField :label="t('forms.field.plainLabel')">
+          <JinTextField :placeholder="t('forms.field.noHintPlaceholder')" />
         </JinField>
 
-        <JinField label="With a hint" hint="Hints persist; errors replace them.">
-          <JinTextField placeholder="Focus me" />
+        <JinField :label="t('forms.field.withHint')" :hint="t('forms.field.hintText')">
+          <JinTextField :placeholder="t('forms.field.focusMe')" />
         </JinField>
 
-        <JinField label="Required" required>
-          <JinTextField placeholder="The asterisk is announced, not just drawn" />
+        <JinField :label="t('forms.field.required')" required>
+          <JinTextField :placeholder="t('forms.field.requiredPlaceholder')" />
         </JinField>
 
-        <JinField label="Optional" optional optional-label="(not required)">
+        <JinField
+          :label="t('forms.field.optional')"
+          optional
+          :optional-label="t('forms.field.optionalLabel')"
+        >
           <JinTextField />
         </JinField>
 
-        <JinField label="With an error" error="This value is already taken.">
-          <JinTextField model-value="taken" />
+        <JinField :label="t('forms.field.withError')" :error="t('forms.field.errorText')">
+          <JinTextField :model-value="t('forms.field.taken')" />
         </JinField>
 
-        <JinField label="Reserved message space" hint="No layout jump when an error appears" reserve-message-space>
+        <JinField
+          :label="t('forms.field.reservedSpace')"
+          :hint="t('forms.field.reservedSpaceHint')"
+          reserve-message-space
+        >
           <JinTextField />
         </JinField>
 
-        <JinField label="Disabled control" hint="The hint still explains the state.">
-          <JinTextField disabled model-value="Read-only content" />
+        <JinField :label="t('forms.field.disabledControl')" :hint="t('forms.field.disabledHint')">
+          <JinTextField disabled :model-value="t('forms.field.readOnlyContent')" />
         </JinField>
 
-        <JinField label="Composite control" :no-label-for="true" hint="A label without a single target control.">
-          <JinSwitch label="Nested switch inside a field" />
+        <JinField
+          :label="t('forms.field.composite')"
+          :no-label-for="true"
+          :hint="t('forms.field.compositeHint')"
+        >
+          <JinSwitch :label="t('forms.field.nestedSwitch')" />
         </JinField>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Text field"
-      note="Single line and textarea variants, sizes, affixes, a clear button and a character counter that turns into a warning when the limit is exceeded."
-      stacked
-    >
+    <DemoSection :title="t('forms.text.title')" :note="t('forms.text.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinField label="Empty with placeholder">
-          <JinTextField v-model="basicText" placeholder="Type something" clearable />
+        <JinField :label="t('forms.text.emptyWithPlaceholder')">
+          <JinTextField v-model="basicText" :placeholder="t('forms.text.typeSomething')" clearable />
         </JinField>
 
-        <JinField label="With a value and clear button">
+        <JinField :label="t('forms.text.withValue')">
           <JinTextField v-model="withValue" clearable />
         </JinField>
 
-        <JinField label="Long value">
+        <JinField :label="t('forms.text.longValue')">
           <JinTextField v-model="longValue" clearable />
         </JinField>
 
-        <JinField label="Invalid" error="That is not a valid address.">
+        <JinField :label="t('forms.text.invalid')" :error="t('forms.text.invalidError')">
           <JinTextField v-model="invalidText" invalid />
         </JinField>
 
-        <JinField label="Read-only">
-          <JinTextField model-value="Set by the system" readonly />
+        <JinField :label="t('forms.text.readOnly')">
+          <JinTextField :model-value="t('forms.text.setBySystem')" readonly />
         </JinField>
 
-        <JinField label="Disabled">
-          <JinTextField model-value="Unavailable right now" disabled />
+        <JinField :label="t('forms.text.disabled')">
+          <JinTextField :model-value="t('forms.text.unavailable')" disabled />
         </JinField>
 
-        <JinField label="Small">
+        <JinField :label="t('forms.text.small')">
           <JinTextField size="sm" placeholder="sm" />
         </JinField>
 
-        <JinField label="Large">
+        <JinField :label="t('forms.text.large')">
           <JinTextField size="lg" placeholder="lg" />
         </JinField>
 
-        <JinField label="With a prefix and suffix">
-          <JinTextField placeholder="example.com">
+        <JinField :label="t('forms.text.affixes')">
+          <JinTextField :placeholder="t('forms.text.affixPlaceholder')">
             <template #prefix><span class="gallery-muted">https://</span></template>
             <template #suffix><JinIcon name="external" /></template>
           </JinTextField>
         </JinField>
 
-        <JinField label="Password">
+        <JinField :label="t('forms.text.password')">
           <JinTextField type="password" model-value="hunter2" />
         </JinField>
 
-        <JinField label="Character counter" hint="Counter turns to a warning past the limit.">
+        <JinField :label="t('forms.text.counter')" :hint="t('forms.text.counterHint')">
           <JinTextField v-model="counter" :maxlength="24" show-count />
         </JinField>
 
-        <JinField label="Textarea">
-          <JinTextField v-model="bio" multiline :rows="4" placeholder="A few paragraphs" />
+        <JinField :label="t('forms.text.textarea')">
+          <JinTextField v-model="bio" multiline :rows="4" :placeholder="t('forms.text.textareaPlaceholder')" />
         </JinField>
 
-        <JinField label="Autosizing textarea" hint="Grows with the content up to maxRows.">
-          <JinTextField multiline autosize :rows="2" :max-rows="6" placeholder="Keep typing…" />
+        <JinField :label="t('forms.text.autosize')" :hint="t('forms.text.autosizeHint')">
+          <JinTextField
+            multiline
+            autosize
+            :rows="2"
+            :max-rows="6"
+            :placeholder="t('forms.text.autosizePlaceholder')"
+          />
         </JinField>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Search field"
-      note="A text field specialised for search: an icon, a clear affordance, a debounced search event, and Escape to clear."
-      stacked
-    >
+    <DemoSection :title="t('forms.search.title')" :note="t('forms.search.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinField label="Debounced" :hint="searchResult || 'Emits after 300 ms of no typing.'">
-          <JinSearchField v-model="search" placeholder="Search…" @search="(value: string) => (searchResult = value ? `Searched for “${value}”` : 'Cleared')" />
+        <JinField :label="t('forms.search.debounced')" :hint="searchHint">
+          <JinSearchField
+            v-model="search"
+            :placeholder="t('forms.search.placeholder')"
+            @search="(value: string) => (searchResult = value ? { key: 'forms.search.searched', vars: { value } } : { key: 'forms.search.cleared' })"
+          />
         </JinField>
 
-        <JinField label="Immediate (no debounce)">
-          <JinSearchField :debounce="0" placeholder="Emits on Enter only" />
+        <JinField :label="t('forms.search.immediate')">
+          <JinSearchField :debounce="0" :placeholder="t('forms.search.immediateHint')" />
         </JinField>
 
-        <JinField label="Disabled">
-          <JinSearchField disabled placeholder="Unavailable" />
+        <JinField :label="t('forms.text.disabled')">
+          <JinSearchField disabled :placeholder="t('forms.search.disabledHint')" />
         </JinField>
 
-        <JinField label="Large">
+        <JinField :label="t('forms.text.large')">
           <JinSearchField size="lg" placeholder="lg" />
         </JinField>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Select"
-      note="One API, two implementations. Native mode renders a real select for maximum platform fidelity; custom mode renders a listbox with rich rows. Switching between them does not change the call site."
-      stacked
-    >
+    <DemoSection :title="t('forms.select.title')" :note="t('forms.select.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinField label="Custom listbox" hint="Arrow keys, type-ahead, disabled options.">
+        <JinField :label="t('forms.select.custom')" :hint="t('forms.select.customHint')">
           <JinSelect v-model="selectValue" :options="selectOptions" />
         </JinField>
 
-        <JinField label="Native select" hint="The platform control, same props.">
+        <JinField :label="t('forms.select.native')" :hint="t('forms.select.nativeHint')">
           <JinSelect v-model="nativeSelectValue" :options="selectOptions" native />
         </JinField>
 
-        <JinField label="Rich option rows" hint="The #option slot renders whatever the row needs.">
+        <JinField :label="t('forms.select.richRows')" :hint="t('forms.select.richHint')">
           <JinSelect v-model="richSelectValue" :options="richOptions">
             <template #option="{ option }">
               <span style="display: inline-flex; align-items: center; gap: var(--jin-space-2)">
                 <JinIcon name="sparkle" :size="0.9" />
                 {{ option.label }}
-                <JinTag v-if="option.value === 'lg'" label="popular" />
+                <JinTag v-if="option.value === 'lg'" :label="t('forms.select.popular')" />
               </span>
             </template>
           </JinSelect>
         </JinField>
 
-        <JinField label="Placeholder (nothing selected)">
-          <JinSelect :options="selectOptions" placeholder="Choose a state" />
+        <JinField :label="t('forms.select.placeholderField')">
+          <JinSelect :options="selectOptions" :placeholder="t('forms.select.chooseState')" />
         </JinField>
 
-        <JinField label="Invalid" error="Pick one to continue.">
-          <JinSelect :options="selectOptions" placeholder="Choose" invalid />
+        <JinField :label="t('forms.select.invalid')" :error="t('forms.select.invalidError')">
+          <JinSelect :options="selectOptions" :placeholder="t('forms.select.choose')" invalid />
         </JinField>
 
-        <JinField label="Disabled">
+        <JinField :label="t('forms.select.disabled')">
           <JinSelect :options="selectOptions" model-value="fold" disabled />
         </JinField>
 
-        <JinField label="Empty option list">
-          <JinSelect :options="[]" placeholder="No options available" />
+        <JinField :label="t('forms.select.emptyList')">
+          <JinSelect :options="[]" :placeholder="t('forms.select.noOptionsAvailable')" />
         </JinField>
 
-        <JinField label="Small and large" hint="Size travels with the control.">
+        <JinField :label="t('forms.select.sizes')" :hint="t('forms.select.sizesHint')">
           <div style="display: flex; gap: var(--jin-space-2)">
             <JinSelect v-model="selectValue" size="sm" :options="selectOptions" />
             <JinSelect v-model="selectValue" size="lg" :options="selectOptions" />
@@ -298,133 +331,164 @@ function submitDemo(): void {
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Checkbox"
-      note="Checked, unchecked, and the mixed state — which is announced as aria-checked=mixed rather than drawn as an ambiguous dash."
-    >
+    <DemoSection :title="t('forms.checkbox.title')" :note="t('forms.checkbox.note')">
       <div style="display: flex; flex-direction: column; gap: var(--jin-space-3)">
-        <JinCheckbox v-model="checked" label="Checked" />
-        <JinCheckbox v-model="unchecked" label="Unchecked" />
-        <JinCheckbox :model-value="false" :indeterminate="true" label="Indeterminate (mixed)" />
-        <JinCheckbox v-model="checked" label="With a hint" hint="Hints explain the consequence, not the mechanism." />
-        <JinCheckbox :model-value="false" disabled label="Disabled" />
-        <JinCheckbox :model-value="true" disabled label="Disabled and checked" />
-        <JinCheckbox :model-value="false" invalid label="Invalid" />
-        <JinCheckbox :model-value="false" label="A very long label that wraps onto a second line because it keeps going and going and going" />
+        <JinCheckbox v-model="checked" :label="t('forms.checkbox.checked')" />
+        <JinCheckbox v-model="unchecked" :label="t('forms.checkbox.unchecked')" />
+        <JinCheckbox :model-value="false" :indeterminate="true" :label="t('forms.checkbox.indeterminate')" />
+        <JinCheckbox
+          v-model="checked"
+          :label="t('forms.checkbox.withHint')"
+          :hint="t('forms.checkbox.hintText')"
+        />
+        <JinCheckbox :model-value="false" disabled :label="t('forms.checkbox.disabled')" />
+        <JinCheckbox :model-value="true" disabled :label="t('forms.checkbox.disabledChecked')" />
+        <JinCheckbox :model-value="false" invalid :label="t('forms.checkbox.invalid')" />
+        <JinCheckbox :model-value="false" :label="t('forms.checkbox.longLabel')" />
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Radio group"
-      note="A roving tabindex group over native radio inputs: one tab stop for the group, arrows move and select, disabled options are skipped."
-    >
+    <DemoSection :title="t('forms.radio.title')" :note="t('forms.radio.note')">
       <div class="gallery-grid gallery-grid--two">
-        <JinRadioGroup v-model="radio" :options="radioOptions" label="Display state" required />
-        <JinRadioGroup v-model="radioEmpty" :options="radioOptions" label="Nothing selected yet" hint="The first enabled option owns the tab stop." />
+        <JinRadioGroup
+          v-model="radio"
+          :options="radioOptions"
+          :label="t('forms.radio.displayState')"
+          required
+        />
+        <JinRadioGroup
+          v-model="radioEmpty"
+          :options="radioOptions"
+          :label="t('forms.radio.nothingSelected')"
+          :hint="t('forms.radio.firstEnabledHint')"
+        />
         <JinRadioGroup
           v-model="radio"
           :options="radioOptions.slice(0, 3)"
-          label="Horizontal"
+          :label="t('forms.radio.horizontal')"
           orientation="horizontal"
         />
-        <JinRadioGroup :options="radioOptions" label="Disabled group" disabled model-value="normal" />
-        <JinRadioGroup :options="radioOptions" label="With an error" error="Choose one of the enabled options." model-value="normal" />
+        <JinRadioGroup
+          :options="radioOptions"
+          :label="t('forms.radio.disabledGroup')"
+          disabled
+          model-value="normal"
+        />
+        <JinRadioGroup
+          :options="radioOptions"
+          :label="t('forms.radio.withError')"
+          :error="t('forms.radio.errorText')"
+          model-value="normal"
+        />
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Switch"
-      note="On/off with role=switch, so assistive technology announces the state as on or off rather than true or false."
-    >
+    <DemoSection :title="t('forms.switch.title')" :note="t('forms.switch.note')">
       <div style="display: flex; flex-direction: column; gap: var(--jin-space-3)">
-        <JinSwitch v-model="toggledOn" label="Enabled" />
-        <JinSwitch v-model="toggledOff" label="Disabled state of the same control (off)" />
-        <JinSwitch :model-value="true" disabled label="Disabled, on" />
-        <JinSwitch :model-value="false" disabled label="Disabled, off" />
-        <JinSwitch v-model="toggledOn" size="sm" label="Small" />
-        <JinSwitch :model-value="false" aria-label="Named only for screen readers" />
+        <JinSwitch v-model="toggledOn" :label="t('forms.switch.enabled')" />
+        <JinSwitch v-model="toggledOff" :label="t('forms.switch.offState')" />
+        <JinSwitch :model-value="true" disabled :label="t('forms.switch.disabledOn')" />
+        <JinSwitch :model-value="false" disabled :label="t('forms.switch.disabledOff')" />
+        <JinSwitch v-model="toggledOn" size="sm" :label="t('forms.switch.small')" />
+        <JinSwitch :model-value="false" :aria-label="t('forms.switch.screenReaderOnly')" />
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Hotkey recorder"
-      note="Recording and conflict detection are pure functions in the kernel: normalization, whether a combination is usable at all, and whether it collides with an existing binding. Click the control, then press a combination."
-      stacked
-    >
+    <DemoSection :title="t('forms.hotkey.title')" :note="t('forms.hotkey.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinField label="Shortcut" hint="Click, then press the keys you want.">
+        <JinField :label="t('forms.hotkey.shortcut')" :hint="t('forms.hotkey.shortcutHint')">
           <JinHotkeyRecorder
             v-model="recorded"
             :bindings="bindings"
-            placeholder="Click to record"
+            :placeholder="t('forms.hotkey.placeholder')"
             @record="onRecord"
             @conflict="onConflict"
             @invalid="onInvalid"
           />
         </JinField>
 
-        <JinField label="Conflicts rejected outright" hint="Ctrl+S and Ctrl+O are taken, so they are refused.">
+        <JinField
+          :label="t('forms.hotkey.conflictsRejected')"
+          :hint="t('forms.hotkey.conflictsHint')"
+        >
           <JinHotkeyRecorder
             model-value=""
             :bindings="bindings"
             :reject-conflicts="true"
-            placeholder="Try Ctrl+S"
+            :placeholder="t('forms.hotkey.tryCtrlS')"
             @record="onRecord"
             @conflict="onConflict"
             @invalid="onInvalid"
           />
         </JinField>
 
-        <JinField label="Disabled">
+        <JinField :label="t('forms.hotkey.disabled')">
           <JinHotkeyRecorder model-value="Ctrl+Alt+D" disabled />
         </JinField>
 
-        <JinField label="Bare keys allowed" hint="Without this, a bare letter is refused because it would swallow typing.">
-          <JinHotkeyRecorder model-value="" allow-bare-keys placeholder="Press any key" @record="onRecord" @invalid="onInvalid" />
+        <JinField :label="t('forms.hotkey.bareKeys')" :hint="t('forms.hotkey.bareKeysHint')">
+          <JinHotkeyRecorder
+            model-value=""
+            allow-bare-keys
+            :placeholder="t('forms.hotkey.pressAnyKey')"
+            @record="onRecord"
+            @invalid="onInvalid"
+          />
         </JinField>
       </div>
 
       <JinAlert
         v-if="events.length > 0"
         tone="neutral"
-        title="Recorder events"
-        :description="events.join(' · ')"
+        :title="t('forms.hotkey.eventsTitle')"
+        :description="eventText"
       />
       <p v-if="recordedParts" class="gallery-mono">
-        Current value: {{ recorded }} — key {{ recordedParts.key }},
-        modifiers {{ [recordedParts.ctrl && 'Ctrl', recordedParts.alt && 'Alt', recordedParts.shift && 'Shift', recordedParts.meta && 'Meta'].filter(Boolean).join('+') || 'none' }}
+        {{
+          t('forms.hotkey.currentValue', {
+            value: recorded,
+            key: recordedParts.key,
+            modifiers,
+          })
+        }}
       </p>
     </DemoSection>
 
-    <DemoSection
-      title="A complete form"
-      note="Everything above composed: a field container per control, hints that become errors, a required marker, and a submit that reports back."
-      stacked
-    >
+    <DemoSection :title="t('forms.complete.title')" :note="t('forms.complete.note')" stacked>
       <form style="width: min(560px, 100%); display: grid; gap: var(--jin-space-4)" @submit.prevent="submitDemo">
-        <JinField label="Name" hint="The label that appears in the list." required>
-          <JinTextField model-value="" placeholder="Display name" />
+        <JinField :label="t('forms.complete.name')" :hint="t('forms.complete.nameHint')" required>
+          <JinTextField model-value="" :placeholder="t('forms.complete.namePlaceholder')" />
         </JinField>
 
-        <JinField label="Kind">
+        <JinField :label="t('forms.complete.kind')">
           <JinSelect v-model="selectValue" :options="selectOptions" />
         </JinField>
 
-        <JinField label="Notes" :optional="true">
-          <JinTextField multiline autosize :rows="2" :max-rows="5" placeholder="Anything worth remembering" />
+        <JinField :label="t('forms.complete.notes')" :optional="true">
+          <JinTextField
+            multiline
+            autosize
+            :rows="2"
+            :max-rows="5"
+            :placeholder="t('forms.complete.notesPlaceholder')"
+          />
         </JinField>
 
-        <JinRadioGroup v-model="radio" :options="radioOptions.slice(0, 3)" label="Visibility" />
+        <JinRadioGroup
+          v-model="radio"
+          :options="radioOptions.slice(0, 3)"
+          :label="t('forms.complete.visibility')"
+        />
 
         <JinDivider />
 
         <div style="display: flex; gap: var(--jin-space-2)">
-          <JinButton type="submit" variant="primary">Save</JinButton>
-          <JinButton type="reset" variant="ghost">Reset</JinButton>
+          <JinButton type="submit" variant="primary">{{ t('common.save') }}</JinButton>
+          <JinButton type="reset" variant="ghost">{{ t('common.reset') }}</JinButton>
         </div>
       </form>
 
-      <JinAlert v-if="events.length > 0" tone="success" :title="events[0]" />
+      <JinAlert v-if="events.length > 0" tone="success" :title="eventText" />
     </DemoSection>
   </DemoPage>
 </template>

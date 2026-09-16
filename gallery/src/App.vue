@@ -3,15 +3,18 @@
  * The Gallery shell.
  *
  * Requirement 1 is that the Gallery is built from the library's own components:
- * the navigation, the two switchers, the dropdown, the modals, the tooltips and
- * every message on this page come from `@aeroscis/jin`. Where a native element would
- * have been easier, the library component is used on purpose — this is the
- * strongest test the library has.
+ * the navigation, the three switchers, the dropdown, the modals, the tooltips
+ * and every message on this page come from `@aeroscis/jin`. Where a native
+ * element would have been easier, the library component is used on purpose —
+ * this is the strongest test the library has.
+ *
+ * Every string here comes from the dictionary, and the language switcher is
+ * what makes the library's own strings follow: the translation passed to
+ * `JinUI` is the same dictionary (see src/i18n).
  */
 import { computed, onMounted, ref } from 'vue'
 import {
   JinAlert,
-  JinBadge,
   JinButton,
   JinDivider,
   JinDrawer,
@@ -19,11 +22,9 @@ import {
   JinIcon,
   JinNav,
   JinNotificationRegion,
-  JinPopconfirm,
   JinSelect,
   JinSwitch,
   JinToastRegion,
-  JinToolbar,
   JinTooltip,
   useNotifications,
   useTheme,
@@ -33,9 +34,12 @@ import {
 } from '@aeroscis/jin'
 import { AVAILABLE_STYLES } from './host/preferences'
 import { getCapabilities } from './host/capabilities'
+import { LOCALES, useI18n, type GalleryLocale } from './i18n'
 import TokenPanel from './panels/TokenPanel.vue'
 import { PAGES } from './pages/registry'
 
+const i18n = useI18n()
+const t = i18n.t
 const theme = useTheme()
 const toasts = useToasts()
 const notifications = useNotifications()
@@ -44,10 +48,10 @@ const capabilities = getCapabilities()
 // The top nav lists pages only. A page's sections appear in the section list
 // below it, so they are not repeated as nested rows here.
 const navItems = computed<NavItem[]>(() => [
-  { id: 'tokens', label: 'Design tokens', icon: 'sparkle', badge: 'live' },
+  { id: 'tokens', label: t('app.nav.tokens'), icon: 'sparkle', badge: t('app.nav.live') },
   ...PAGES.map<NavItem>((page) => ({
     id: page.id,
-    label: page.label,
+    label: t(page.labelKey),
     icon: page.icon,
   })),
 ])
@@ -67,21 +71,30 @@ function selectChild(pageId: string, childId: string): void {
   activeChild.value = childId
 }
 
-const styleOptions = AVAILABLE_STYLES.map((entry) => ({ value: entry.id, label: entry.label }))
-const styleNote = computed(() => AVAILABLE_STYLES.find((entry) => entry.id === theme.style.value)?.note ?? '')
+const styleOptions = computed(() =>
+  AVAILABLE_STYLES.map((entry) => ({ value: entry.id, label: t(entry.labelKey) })),
+)
+const styleNote = computed(() => {
+  const entry = AVAILABLE_STYLES.find((candidate) => candidate.id === theme.style.value)
+  return entry ? t(entry.noteKey) : ''
+})
+
+const languageOptions = LOCALES.map((entry) => ({ value: entry.id, label: entry.label }))
 
 const aboutOpen = ref(false)
 const shortcutsOpen = ref(false)
-const compactMode = ref(false)
 
 const headerMenu = computed<MenuEntry[]>(() => [
-  { id: 'about', label: 'About Jin (锦)', keywords: 'info version' },
-  { id: 'shortcuts', label: 'Keyboard model', shortcut: '?' },
+  { id: 'about', label: t('app.menu.about'), keywords: t('app.menu.aboutKeywords') },
+  { id: 'shortcuts', label: t('app.menu.shortcuts'), shortcut: '?' },
   { id: 'sep-1', type: 'separator' },
-  { id: 'tokens', label: 'Design tokens', disabled: current.value === 'tokens' },
-  { id: 'theme-toggle', label: theme.mode.value === 'dark' ? 'Switch to light' : 'Switch to dark' },
+  { id: 'tokens', label: t('app.nav.tokens'), disabled: current.value === 'tokens' },
+  {
+    id: 'theme-toggle',
+    label: t(theme.mode.value === 'dark' ? 'app.menu.switchToLight' : 'app.menu.switchToDark'),
+  },
   { id: 'sep-2', type: 'separator' },
-  { id: 'reset-demo', label: 'Reset demo state', danger: true },
+  { id: 'reset-demo', label: t('app.menu.reset'), danger: true },
 ])
 
 function onHeaderMenu(entry: MenuEntry): void {
@@ -109,34 +122,45 @@ function resetDemo(): void {
   notifications.clear()
   theme.setStyle('jin')
   theme.setMode('dark')
-  toasts.push({ tone: 'success', title: 'Demo state reset', description: 'Style, mode and messages are back to defaults.' })
+  toasts.push({
+    tone: 'success',
+    title: t('app.toast.resetTitle'),
+    description: t('app.toast.resetDescription'),
+  })
 }
 
-const shortcuts = [
-  { keys: 'Tab / Shift+Tab', what: 'Move between controls' },
-  { keys: '← → ↑ ↓', what: 'Move inside a group (tabs, menu, tree, radio, toolbar)' },
-  { keys: 'Home / End', what: 'Jump to the first or last item of a group' },
-  { keys: 'Enter / Space', what: 'Activate the focused control' },
-  { keys: 'Esc', what: 'Close the topmost overlay; focus returns to its trigger' },
-  { keys: 'Type-ahead', what: 'Jump to an item by typing its first letters' },
-  { keys: 'Shift+F10 / Menu', what: 'Open a context menu from the keyboard' },
-  { keys: 'Tab', what: 'Inside an open dialog, Tab cycles within it' },
-]
+// Keyboard notation is not translated: the keys on a keyboard are the same
+// everywhere, and a reader maps this column to their own hands.
+const shortcuts = computed(() => [
+  { keys: 'Tab / Shift+Tab', what: t('app.shortcuts.moveBetween') },
+  { keys: '← → ↑ ↓', what: t('app.shortcuts.moveInside') },
+  { keys: 'Home / End', what: t('app.shortcuts.homeEnd') },
+  { keys: 'Enter / Space', what: t('app.shortcuts.activate') },
+  { keys: 'Esc', what: t('app.shortcuts.escape') },
+  { keys: 'Type-ahead', what: t('app.shortcuts.typeahead') },
+  { keys: 'Shift+F10 / Menu', what: t('app.shortcuts.contextMenu') },
+  { keys: 'Tab', what: t('app.shortcuts.tabInDialog') },
+])
 
 function announceStyle(): void {
-  const label = AVAILABLE_STYLES.find((entry) => entry.id === theme.style.value)?.label ?? theme.style.value
-  toasts.push({ tone: 'info', title: `${label} · ${theme.mode.value}`, duration: 2200 })
+  const entry = AVAILABLE_STYLES.find((candidate) => candidate.id === theme.style.value)
+  const label = entry ? t(entry.labelKey) : theme.style.value
+  toasts.push({
+    tone: 'info',
+    title: `${label} · ${t(theme.mode.value === 'dark' ? 'app.mode.dark' : 'app.mode.light')}`,
+    duration: 2200,
+  })
 }
 
 const portalHint = computed(() =>
-  capabilities.isDesktop ? 'Native folder picker available' : 'Browser: folder picker unavailable',
+  capabilities.isDesktop ? t('app.toast.folderPickerAvailable') : t('app.toast.folderPickerUnavailable'),
 )
 
 onMounted(() => {
   if (!capabilities.isDesktop) return
   toasts.push({
     tone: 'neutral',
-    title: 'Running in the desktop shell',
+    title: t('app.toast.desktopTitle'),
     description: portalHint.value,
     duration: 3500,
   })
@@ -149,45 +173,57 @@ onMounted(() => {
       <header class="gallery-header">
         <div class="gallery-brand">
           <span class="gallery-brand__name">Jin · 锦</span>
-          <span class="gallery-brand__sub">component gallery</span>
+          <span class="gallery-brand__sub">{{ t('app.brand.sub') }}</span>
         </div>
 
         <div class="gallery-header__spacer" />
 
         <div class="gallery-header__controls">
           <div class="gallery-control">
-            <span class="gallery-control__label">Style</span>
+            <span class="gallery-control__label">{{ t('app.control.style') }}</span>
             <JinSelect
               :model-value="theme.style.value"
               :options="styleOptions"
               size="sm"
               :block="false"
-              aria-label="Visual style"
+              :aria-label="t('app.control.styleAria')"
               @update:model-value="(value: string | null) => { theme.setStyle(value ?? 'jin'); announceStyle() }"
             />
           </div>
 
           <div class="gallery-control">
-            <span class="gallery-control__label">Mode</span>
+            <span class="gallery-control__label">{{ t('app.control.mode') }}</span>
             <JinSwitch
               :model-value="theme.mode.value === 'dark'"
               size="sm"
-              aria-label="Dark mode"
+              :aria-label="t('app.control.modeAria')"
               @update:model-value="(value: boolean) => { theme.setMode(value ? 'dark' : 'light'); announceStyle() }"
             />
           </div>
 
-          <JinTooltip content="Reset style, mode and messages" placement="bottom">
-            <JinButton variant="ghost" size="sm" icon label="Reset demo" @click="resetDemo">
+          <div class="gallery-control">
+            <span class="gallery-control__label">{{ t('app.control.language') }}</span>
+            <JinSelect
+              :model-value="i18n.locale.value"
+              :options="languageOptions"
+              size="sm"
+              :block="false"
+              :aria-label="t('app.control.languageAria')"
+              @update:model-value="(value: string | null) => i18n.setLocale((value ?? 'en') as GalleryLocale)"
+            />
+          </div>
+
+          <JinTooltip :content="t('app.control.resetTooltip')" placement="bottom">
+            <JinButton variant="ghost" size="sm" icon :label="t('app.control.reset')" @click="resetDemo">
               <template #icon><JinIcon name="refresh" /></template>
             </JinButton>
           </JinTooltip>
 
-          <JinDropdown :items="headerMenu" aria-label="Gallery menu" @select="onHeaderMenu">
+          <JinDropdown :items="headerMenu" :aria-label="t('app.control.menuAria')" @select="onHeaderMenu">
             <template #trigger>
               <JinButton variant="secondary" size="sm">
                 <template #icon><JinIcon name="menu" /></template>
-                Menu
+                {{ t('app.control.menu') }}
               </JinButton>
             </template>
           </JinDropdown>
@@ -195,15 +231,17 @@ onMounted(() => {
       </header>
 
       <aside class="gallery-sidebar">
-        <JinNav :items="navItems" :current="current" aria-label="Gallery sections" @select="selectItem" />
+        <JinNav :items="navItems" :current="current" :aria-label="t('app.nav.aria')" @select="selectItem" />
 
         <template v-if="currentPage?.children">
           <JinDivider spaced />
-          <p class="gallery-sidebar__group-title">{{ currentPage.label }} sections</p>
+          <p class="gallery-sidebar__group-title">
+            {{ t('app.nav.sections', { page: t(currentPage.labelKey) }) }}
+          </p>
           <JinNav
-            :items="currentPage.children.map((child) => ({ id: child.id, label: child.label }))"
+            :items="currentPage.children.map((child) => ({ id: child.id, label: t(child.labelKey) }))"
             :current="activeChild"
-            :aria-label="`${currentPage.label} sections`"
+            :aria-label="t('app.nav.sections', { page: t(currentPage.labelKey) })"
             @select="(item) => selectChild(currentPage!.id, item.id)"
           />
         </template>
@@ -224,33 +262,32 @@ onMounted(() => {
     <JinToastRegion />
     <JinNotificationRegion />
 
-    <JinDrawer v-model="aboutOpen" title="About Jin (锦)" side="right" size="md">
+    <JinDrawer v-model="aboutOpen" :title="t('app.menu.about')" side="right" size="md">
       <div class="gallery-grid">
-        <p>
-          Jin is a token-driven Vue 3 control library. Its name is the Chinese word for
-          <em>brocade</em>: a fabric woven from many small repeated units, which is what a
-          component set is, and it is dyed in many colourways, which is what a style system is.
-        </p>
-        <p>
-          The library knows about structure, interaction, accessibility and state machines. Anything
-          that needs a business noun to describe goes through props, slots or injection — the
-          controls in this gallery carry no domain vocabulary at all.
-        </p>
-        <JinDivider label="Contract" />
+        <p>{{ t('app.about.p1') }}</p>
+        <p>{{ t('app.about.p2') }}</p>
+        <JinDivider :label="t('app.about.contract')" />
         <ul class="gallery-mono">
-          <li>Tokens: <code>--jin-*</code> · classes: <code>jin-*</code> · components: <code>Jin*</code></li>
-          <li>Style axis: <code>data-jin-style</code> · mode axis: <code>data-jin-mode</code></li>
-          <li>One portal container, six z-index layers</li>
+          <li>
+            {{ t('app.about.contract.tokens') }} <code>--jin-*</code> ·
+            {{ t('app.about.contract.classes') }} <code>jin-*</code> ·
+            {{ t('app.about.contract.components') }} <code>Jin*</code>
+          </li>
+          <li>
+            {{ t('app.about.contract.styleAxis') }} <code>data-jin-style</code> ·
+            {{ t('app.about.contract.modeAxis') }} <code>data-jin-mode</code>
+          </li>
+          <li>{{ t('app.about.contract.portal') }}</li>
         </ul>
       </div>
     </JinDrawer>
 
-    <JinDrawer v-model="shortcutsOpen" title="Keyboard model" side="right" size="lg">
+    <JinDrawer v-model="shortcutsOpen" :title="t('app.shortcuts.title')" side="right" size="lg">
       <div class="gallery-grid">
         <JinAlert
           tone="info"
-          title="Every control is reachable without a mouse"
-          description="The table below is not aspirational — each row is implemented by the shared kernel modules and covered by the unit tests."
+          :title="t('app.shortcuts.alertTitle')"
+          :description="t('app.shortcuts.alertDescription')"
         />
         <div class="gallery-grid">
           <div v-for="entry in shortcuts" :key="entry.keys" class="gallery-list-row">
@@ -258,12 +295,8 @@ onMounted(() => {
             <span class="gallery-muted">{{ entry.what }}</span>
           </div>
         </div>
-        <JinDivider label="Focus" />
-        <p>
-          Overlays trap focus while open and return it to the element that opened them when they
-          close. The focus ring comes from <code>--jin-focus-ring-*</code>, which every theme
-          declares explicitly so a style change can never remove keyboard focus.
-        </p>
+        <JinDivider :label="t('app.shortcuts.focus')" />
+        <p>{{ t('app.shortcuts.focusText') }}</p>
       </div>
     </JinDrawer>
   </div>

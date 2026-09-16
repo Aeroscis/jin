@@ -33,12 +33,26 @@ import '@aeroscis/jin/themes/neubrutalism.dark.css'
 import './gallery.css'
 import App from './App.vue'
 import { installCapabilities } from './host/capabilities'
-import { loadPreferences, savePreferences } from './host/preferences'
+import { loadLocale, loadPreferences, saveLocale, savePreferences } from './host/preferences'
+import { createGalleryI18n, provideI18n } from './i18n'
 
 const app = createApp(App)
 const capabilities = installCapabilities()
 
+const i18n = createGalleryI18n({
+  // A stored choice wins; with none, a Chinese browser opens in Chinese.
+  locale: loadLocale() ?? 'en',
+  onChange: (locale) => saveLocale(locale),
+})
+provideI18n(app, i18n)
+
 app.use(JinUI, {
+  // The library's own strings — "Close", "Expand all", "No data" and the rest
+  // of contracts/strings.json — come through the same dictionary. English
+  // falls through to the library's readable defaults, so the default path the
+  // Gallery is meant to demonstrate is still exactly what an English reader
+  // gets; see src/i18n/library.ts.
+  t: (key, vars) => i18n.jin(key, vars),
   // Capabilities come from the shell when present, and are simply absent in a
   // browser — which is exactly the intended degradation path.
   capabilities,
@@ -50,6 +64,4 @@ app.use(JinUI, {
   },
 })
 
-// No `t`: the library's readable English defaults are what a developer
-// browsing components wants to see. The Gallery demonstrates the default path.
 app.mount('#app')

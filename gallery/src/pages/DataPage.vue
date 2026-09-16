@@ -1,8 +1,13 @@
 <script setup lang="ts">
 /**
  * Data-display catalogue: badge, tag, detail list, link, icon.
+ *
+ * What a value *is* — a file name, a size, a tone name — is copy and follows
+ * the language switcher. What a value *contains* is not touched: icon names,
+ * tone identifiers and the file names in the samples stay as they are, because
+ * they are the labels a developer matches against the code.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   JinAlert,
   JinBadge,
@@ -16,27 +21,46 @@ import {
   ICON_PATHS,
   type DetailItem,
   type IconName,
+  type TranslateVars,
 } from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
+import { useI18n } from '../i18n'
 
 defineProps<{ section?: string | null }>()
 
+const { t } = useI18n()
+
 // ------------------------------------------------------------------ badge
-const tags = ref(['inbox', 'flagged', 'later'])
+interface DemoTab {
+  key: string
+  vars?: TranslateVars
+}
+
+const tags = ref<DemoTab[]>([
+  { key: 'data.tag.inbox' },
+  { key: 'data.tag.flagged' },
+  { key: 'data.tag.later' },
+])
+const tagLabels = computed(() => tags.value.map((tag) => t(tag.key, tag.vars)))
+
+function addTag(): void {
+  tags.value = [...tags.value, { key: 'data.tag.tagName', vars: { index: tags.value.length + 1 } }]
+}
+
 function removeTag(index: number): void {
   tags.value = tags.value.filter((_, position) => position !== index)
 }
 
 // ------------------------------------------------------------ detail list
-const fileDetails: DetailItem[] = [
-  { key: 'name', label: 'Name', value: 'quarterly-report.pdf' },
-  { key: 'size', label: 'Size', value: '2.4 MB' },
-  { key: 'modified', label: 'Last modified', value: '11 September 2026, 14:03' },
-  { key: 'owner', label: 'Owner', value: 'the operations team account' },
-  { key: 'checksum', label: 'Checksum', value: 'sha256:9f2c…d41a' },
-  { key: 'note', label: 'Note', value: null },
-  { key: 'secret', label: 'Internal id', value: 'hidden', hidden: true },
-]
+const fileDetails = computed<DetailItem[]>(() => [
+  { key: 'name', label: t('data.detail.name'), value: t('data.detail.fileName') },
+  { key: 'size', label: t('data.detail.size'), value: t('data.detail.fileSize') },
+  { key: 'modified', label: t('data.detail.modified'), value: t('data.detail.fileModified') },
+  { key: 'owner', label: t('data.detail.owner'), value: t('data.detail.fileOwner') },
+  { key: 'checksum', label: t('data.detail.checksum'), value: 'sha256:9f2c…d41a' },
+  { key: 'note', label: t('data.detail.noteLabel'), value: null },
+  { key: 'secret', label: t('data.detail.internalId'), value: t('data.detail.hidden'), hidden: true },
+])
 
 // ------------------------------------------------------------------- link
 const linkClicks = ref(0)
@@ -44,86 +68,88 @@ const linkClicks = ref(0)
 // ------------------------------------------------------------------- icon
 const iconNames = Object.keys(ICON_PATHS) as IconName[]
 
-const composedDetails: DetailItem[] = [
-  { key: 'status', label: 'Status', value: 'ready' },
-  { key: 'entries', label: 'Entries', value: '1,204' },
-  { key: 'owner', label: 'Owner', value: null },
-]
+const composedDetails = computed<DetailItem[]>(() => [
+  { key: 'status', label: t('data.detail.status'), value: t('data.detail.ready') },
+  { key: 'entries', label: t('data.detail.entries'), value: t('data.detail.entryCount') },
+  { key: 'owner', label: t('data.detail.owner'), value: null },
+])
 </script>
 
 <template>
-  <DemoPage
-    title="Data display"
-    lead="Small, composable pieces that carry a value without carrying meaning. Nothing here needs a domain concept to describe, which is exactly why they can be reused across applications."
-  >
-    <DemoSection
-      title="Badge"
-      note="A short status marker. A dot badge always takes a label, because a bare coloured circle conveys nothing to a screen reader — and very little to a colour-blind user."
-    >
+  <DemoPage :title="t('data.title')" :lead="t('data.lead')">
+    <DemoSection :title="t('data.badge.title')" :note="t('data.badge.note')">
       <div style="display: flex; flex-direction: column; gap: var(--jin-space-4)">
         <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-2); align-items: center">
-          <JinBadge tone="neutral" label="neutral" />
-          <JinBadge tone="accent" label="accent" />
-          <JinBadge tone="info" label="info" />
-          <JinBadge tone="success" label="success" />
-          <JinBadge tone="warning" label="warning" />
-          <JinBadge tone="danger" label="danger" />
+          <JinBadge tone="neutral" :label="t('common.tone.neutral')" />
+          <JinBadge tone="accent" :label="t('common.tone.accent')" />
+          <JinBadge tone="info" :label="t('common.tone.info')" />
+          <JinBadge tone="success" :label="t('common.tone.success')" />
+          <JinBadge tone="warning" :label="t('common.tone.warning')" />
+          <JinBadge tone="danger" :label="t('common.tone.danger')" />
         </div>
 
         <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-4); align-items: center">
-          <JinBadge variant="dot" tone="success" label="Online" />
-          <JinBadge variant="dot" tone="warning" label="Degraded" />
-          <JinBadge variant="dot" tone="danger" label="Offline" />
-          <span class="gallery-muted">dot + label renders the dot, and announces the label</span>
+          <JinBadge variant="dot" tone="success" :label="t('data.badge.online')" />
+          <JinBadge variant="dot" tone="warning" :label="t('data.badge.degraded')" />
+          <JinBadge variant="dot" tone="danger" :label="t('data.badge.offline')" />
+          <span class="gallery-muted">{{ t('data.badge.dotExplain') }}</span>
         </div>
 
         <div style="display: flex; flex-wrap: wrap; gap: var(--jin-space-2); align-items: center">
           <JinBadge tone="neutral" label="12" />
           <JinBadge tone="danger" label="99+" />
-          <JinBadge tone="info">slot content</JinBadge>
-          <span class="gallery-muted">a badge is a value container, not a button</span>
+          <JinBadge tone="info">{{ t('data.badge.slotContent') }}</JinBadge>
+          <span class="gallery-muted">{{ t('data.badge.valueContainer') }}</span>
         </div>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Tag"
-      note="A removable chip. The remove button joins the tab order when removable, because a keyboard user has to be able to take a tag off."
-      stacked
-    >
+    <DemoSection :title="t('data.tag.title')" :note="t('data.tag.note')" stacked>
       <div class="jin-cluster">
-        <JinTag v-for="(tag, index) in tags" :key="tag" :label="tag" tone="accent" removable @remove="removeTag(index)" />
-        <JinButton v-if="tags.length < 5" size="sm" variant="ghost" @click="tags = [...tags, `tag ${tags.length + 1}`]">
+        <JinTag
+          v-for="(tag, index) in tags"
+          :key="`${tag.key}-${index}`"
+          :label="tagLabels[index]"
+          tone="accent"
+          removable
+          @remove="removeTag(index)"
+        />
+        <JinButton v-if="tags.length < 5" size="sm" variant="ghost" @click="addTag">
           <template #icon><JinIcon name="plus" /></template>
-          Add
+          {{ t('data.tag.add') }}
         </JinButton>
-        <span v-if="tags.length === 0" class="gallery-muted">All tags removed — press Add to put one back.</span>
+        <span v-if="tags.length === 0" class="gallery-muted">{{ t('data.tag.allRemoved') }}</span>
       </div>
 
       <div class="jin-cluster">
-        <JinTag label="neutral" tone="neutral" />
-        <JinTag label="info" tone="info" />
-        <JinTag label="success" tone="success" />
-        <JinTag label="warning" tone="warning" />
-        <JinTag label="danger" tone="danger" />
-        <JinTag label="not removable" />
+        <JinTag :label="t('common.tone.neutral')" tone="neutral" />
+        <JinTag :label="t('common.tone.info')" tone="info" />
+        <JinTag :label="t('common.tone.success')" tone="success" />
+        <JinTag :label="t('common.tone.warning')" tone="warning" />
+        <JinTag :label="t('common.tone.danger')" tone="danger" />
+        <JinTag :label="t('data.tag.notRemovable')" />
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Detail list"
-      note="A key/value table rendered as a real description list, so the label-value relationship survives without any aria plumbing. Rows can be hidden without leaving a gap."
-      stacked
-    >
+    <DemoSection :title="t('data.detail.title')" :note="t('data.detail.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
         <JinDetailList :items="fileDetails" />
         <JinDetailList :items="fileDetails.slice(0, 4)" striped :bordered="false" />
-        <JinDetailList :items="fileDetails.slice(0, 3)" compact empty-text="not set" />
-        <JinCard title="Inside a card" description="The usual setting for a properties panel.">
+        <JinDetailList :items="fileDetails.slice(0, 3)" compact :empty-text="t('data.detail.notSet')" />
+        <JinCard
+          :title="t('data.detail.insideCard')"
+          :description="t('data.detail.insideCardDescription')"
+        >
           <JinDetailList :items="composedDetails" :bordered="false">
             <template #value="{ item }">
-              <JinBadge v-if="item.key === 'status'" tone="success" :label="String(item.value)" />
-              <span v-else-if="item.value === null" class="gallery-muted">unassigned</span>
+              <JinBadge
+                v-if="item.key === 'status'"
+                tone="success"
+                :label="String(item.value)"
+              />
+              <span v-else-if="item.value === null" class="gallery-muted">
+                {{ t('data.detail.unassigned') }}
+              </span>
               <span v-else>{{ item.value }}</span>
             </template>
           </JinDetailList>
@@ -132,28 +158,27 @@ const composedDetails: DetailItem[] = [
 
       <JinAlert
         tone="info"
-        title="Why not a table?"
-        description="A detail list is for reading one record, not for sorting or comparing many. A table would add semantics the content does not have."
+        :title="t('data.detail.whyNotTableTitle')"
+        :description="t('data.detail.whyNotTableDescription')"
       />
     </DemoSection>
 
-    <DemoSection
-      title="Link"
-      note="An inline anchor. With the external variant and an openExternal capability, navigation is handed to the host instead of the browser — which is what a desktop shell needs."
-    >
-      <JinLink href="#section">A plain link</JinLink>
-      <JinLink href="#section" muted>A muted link</JinLink>
-      <JinLink href="https://example.com" external>A link that opens externally</JinLink>
-      <JinLink href="#section" @click="linkClicks += 1">Clicked {{ linkClicks }} time{{ linkClicks === 1 ? '' : 's' }}</JinLink>
-      <JinLink href="#section" disabled>A disabled link</JinLink>
-      <JinLink>A link with no href at all</JinLink>
+    <DemoSection :title="t('data.link.title')" :note="t('data.link.note')">
+      <JinLink href="#section">{{ t('data.link.plain') }}</JinLink>
+      <JinLink href="#section" muted>{{ t('data.link.muted') }}</JinLink>
+      <JinLink href="https://example.com" external>{{ t('data.link.external') }}</JinLink>
+      <JinLink href="#section" @click="linkClicks += 1">
+        {{
+          linkClicks === 1
+            ? t('data.link.clickedOne', { count: linkClicks })
+            : t('data.link.clickedOther', { count: linkClicks })
+        }}
+      </JinLink>
+      <JinLink href="#section" disabled>{{ t('data.link.disabled') }}</JinLink>
+      <JinLink>{{ t('data.link.noHref') }}</JinLink>
     </DemoSection>
 
-    <DemoSection
-      title="Icon"
-      note="A slot-and-convention component, not an icon system. Controls accept a slot for their glyphs and fall back to this set; an application that has its own icon library passes its own component and the library never notices."
-      stacked
-    >
+    <DemoSection :title="t('data.icon.title')" :note="t('data.icon.note')" stacked>
       <div
         style="
           display: grid;
@@ -179,56 +204,66 @@ const composedDetails: DetailItem[] = [
         <JinIcon name="star" :size="1.5" />
         <JinIcon name="star" :size="2" />
         <JinIcon name="star" :size="3" />
-        <span class="gallery-muted">Sizes are in em, so an icon follows the text it sits next to.</span>
+        <span class="gallery-muted">{{ t('data.icon.sizes') }}</span>
       </div>
 
       <div style="display: flex; align-items: center; gap: var(--jin-space-4)">
-        <JinIcon name="check" label="Available" />
-        <span class="gallery-muted">A labelled icon is exposed as an image with that name.</span>
+        <JinIcon name="check" :label="t('data.icon.available')" />
+        <span class="gallery-muted">{{ t('data.icon.labelled') }}</span>
         <JinIcon name="check" />
-        <span class="gallery-muted">An unlabelled one is hidden from assistive technology.</span>
+        <span class="gallery-muted">{{ t('data.icon.unlabelled') }}</span>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Contrast and non-colour signals"
-      note="Every tone in the system pairs its colour with an icon or with text. Turn the system greyscale and nothing becomes ambiguous."
-      stacked
-    >
+    <DemoSection :title="t('data.contrast.title')" :note="t('data.contrast.note')" stacked>
       <div class="gallery-grid gallery-grid--three">
-        <JinCard title="Status" description="Icon + label, never a bare colour.">
+        <JinCard
+          :title="t('data.contrast.statusTitle')"
+          :description="t('data.contrast.statusDescription')"
+        >
           <div class="jin-stack">
             <div style="display: flex; align-items: center; gap: var(--jin-space-2)">
               <JinIcon name="success" />
-              <JinBadge tone="success" label="ready" />
+              <JinBadge tone="success" :label="t('data.detail.ready')" />
             </div>
             <div style="display: flex; align-items: center; gap: var(--jin-space-2)">
               <JinIcon name="warning" />
-              <JinBadge tone="warning" label="degraded" />
+              <JinBadge tone="warning" :label="t('data.badge.degraded')" />
             </div>
             <div style="display: flex; align-items: center; gap: var(--jin-space-2)">
               <JinIcon name="danger" />
-              <JinBadge tone="danger" label="blocked" />
+              <JinBadge tone="danger" :label="t('data.contrast.blocked')" />
             </div>
           </div>
         </JinCard>
 
-        <JinCard title="Value" description="Numbers carry their own meaning.">
+        <JinCard :title="t('data.contrast.valueTitle')" :description="t('data.contrast.valueDescription')">
           <JinDetailList
             :items="[
-              { key: 'a', label: 'Total', value: '1,204' },
-              { key: 'b', label: 'Failed', value: '3' },
-              { key: 'c', label: 'Skipped', value: '0' },
+              { key: 'a', label: t('data.contrast.total'), value: t('data.detail.entryCount') },
+              { key: 'b', label: t('data.contrast.failed'), value: '3' },
+              { key: 'c', label: t('data.contrast.skipped'), value: '0' },
             ]"
             :bordered="false"
             compact
           />
         </JinCard>
 
-        <JinCard title="Wording" description="The strongest signal is still the sentence.">
+        <JinCard
+          :title="t('data.contrast.wordingTitle')"
+          :description="t('data.contrast.wordingDescription')"
+        >
           <div class="jin-stack">
-            <JinAlert tone="success" title="Saved" description="All changes are on disk." />
-            <JinAlert tone="danger" title="Failed" description="Nothing was written." />
+            <JinAlert
+              tone="success"
+              :title="t('data.contrast.savedTitle')"
+              :description="t('data.contrast.savedDescription')"
+            />
+            <JinAlert
+              tone="danger"
+              :title="t('data.contrast.failedTitle')"
+              :description="t('data.contrast.failedDescription')"
+            />
           </div>
         </JinCard>
       </div>

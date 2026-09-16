@@ -169,6 +169,13 @@ app.use(JinUI, {
 
 The library never throws on an unknown key and never renders a raw key into the interface.
 
+This mapping is worth writing against the contract rather than by hand: a dictionary keyed by key —
+the way this one is — passes the keys straight through, but it still needs one entry per key the
+library declares. The Gallery does exactly that in `gallery/src/i18n/library.ts`, where the Chinese
+column is typed `Record<LibraryKey, string>`, so a key added to `contracts/strings.json` fails the
+Gallery's typecheck until it is translated. English needs no entries there at all: the bridge falls
+through to `defaultTranslate`, and the library's own wording *is* the English text.
+
 ### Capabilities and graceful degradation
 
 A capability that is absent is not an error. `JinLink` renders a normal anchor when `openExternal`

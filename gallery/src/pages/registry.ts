@@ -2,6 +2,9 @@
  * The catalogue registry: which pages exist, in which order, and which
  * sections each page has. The navigation in App.vue is generated from this
  * list, so adding a page is a one-file change.
+ *
+ * Labels are dictionary keys, not sentences: the registry is data, and the
+ * sidebar is translated like everything else.
  */
 import type { Component } from 'vue'
 import type { IconName } from '@aeroscis/jin'
@@ -16,12 +19,12 @@ import SamplesPage from './SamplesPage.vue'
 
 export interface PageChild {
   id: string
-  label: string
+  labelKey: string
 }
 
 export interface PageEntry {
   id: string
-  label: string
+  labelKey: string
   icon: IconName
   component: Component
   children?: PageChild[]
@@ -30,103 +33,103 @@ export interface PageEntry {
 export const PAGES: PageEntry[] = [
   {
     id: 'feedback',
-    label: 'Feedback',
+    labelKey: 'nav.feedback',
     icon: 'bell',
     component: FeedbackPage,
     children: [
-      { id: 'spinner', label: 'Spinner' },
-      { id: 'progress', label: 'Progress' },
-      { id: 'skeleton', label: 'Skeleton' },
-      { id: 'alert', label: 'Alert' },
-      { id: 'toast', label: 'Toast' },
-      { id: 'notification', label: 'Notification' },
-      { id: 'result', label: 'Result' },
+      { id: 'spinner', labelKey: 'nav.feedback.spinner' },
+      { id: 'progress', labelKey: 'nav.feedback.progress' },
+      { id: 'skeleton', labelKey: 'nav.feedback.skeleton' },
+      { id: 'alert', labelKey: 'nav.feedback.alert' },
+      { id: 'toast', labelKey: 'nav.feedback.toast' },
+      { id: 'notification', labelKey: 'nav.feedback.notification' },
+      { id: 'result', labelKey: 'nav.feedback.result' },
     ],
   },
   {
     id: 'overlays',
-    label: 'Overlays',
+    labelKey: 'nav.overlays',
     icon: 'copy',
     component: OverlayPage,
     children: [
-      { id: 'modal', label: 'Modal' },
-      { id: 'drawer', label: 'Drawer' },
-      { id: 'popover', label: 'Popover' },
-      { id: 'tooltip', label: 'Tooltip' },
-      { id: 'popconfirm', label: 'Popconfirm' },
+      { id: 'modal', labelKey: 'nav.overlays.modal' },
+      { id: 'drawer', labelKey: 'nav.overlays.drawer' },
+      { id: 'popover', labelKey: 'nav.overlays.popover' },
+      { id: 'tooltip', labelKey: 'nav.overlays.tooltip' },
+      { id: 'popconfirm', labelKey: 'nav.overlays.popconfirm' },
     ],
   },
   {
     id: 'forms',
-    label: 'Forms',
+    labelKey: 'nav.forms',
     icon: 'settings',
     component: FormPage,
     children: [
-      { id: 'field', label: 'Field' },
-      { id: 'text-field', label: 'Text field' },
-      { id: 'search-field', label: 'Search field' },
-      { id: 'select', label: 'Select' },
-      { id: 'checkbox', label: 'Checkbox' },
-      { id: 'radio', label: 'Radio group' },
-      { id: 'switch', label: 'Switch' },
-      { id: 'hotkey', label: 'Hotkey recorder' },
+      { id: 'field', labelKey: 'nav.forms.field' },
+      { id: 'text-field', labelKey: 'nav.forms.textField' },
+      { id: 'search-field', labelKey: 'nav.forms.searchField' },
+      { id: 'select', labelKey: 'nav.forms.select' },
+      { id: 'checkbox', labelKey: 'nav.forms.checkbox' },
+      { id: 'radio', labelKey: 'nav.forms.radio' },
+      { id: 'switch', labelKey: 'nav.forms.switch' },
+      { id: 'hotkey', labelKey: 'nav.forms.hotkey' },
     ],
   },
   {
     id: 'navigation',
-    label: 'Navigation & structure',
+    labelKey: 'nav.navigation',
     icon: 'menu',
     component: NavigationPage,
     children: [
-      { id: 'tabs', label: 'Tabs' },
-      { id: 'menu', label: 'Menu' },
-      { id: 'dropdown', label: 'Dropdown' },
-      { id: 'context-menu', label: 'Context menu' },
-      { id: 'breadcrumb', label: 'Breadcrumb' },
-      { id: 'divider', label: 'Divider' },
-      { id: 'card', label: 'Card' },
-      { id: 'toolbar', label: 'Toolbar' },
-      { id: 'nav', label: 'Nav' },
+      { id: 'tabs', labelKey: 'nav.navigation.tabs' },
+      { id: 'menu', labelKey: 'nav.navigation.menu' },
+      { id: 'dropdown', labelKey: 'nav.navigation.dropdown' },
+      { id: 'context-menu', labelKey: 'nav.navigation.contextMenu' },
+      { id: 'breadcrumb', labelKey: 'nav.navigation.breadcrumb' },
+      { id: 'divider', labelKey: 'nav.navigation.divider' },
+      { id: 'card', labelKey: 'nav.navigation.card' },
+      { id: 'toolbar', labelKey: 'nav.navigation.toolbar' },
+      { id: 'nav', labelKey: 'nav.navigation.nav' },
     ],
   },
   {
     id: 'tree',
-    label: 'Tree',
+    labelKey: 'nav.tree',
     icon: 'database',
     component: TreePage,
     children: [
-      { id: 'basic', label: 'Basics' },
-      { id: 'selection', label: 'Selection' },
-      { id: 'lazy', label: 'Lazy loading' },
-      { id: 'failure', label: 'Failure & retry' },
-      { id: 'slots', label: 'Item slot & tone' },
-      { id: 'keyboard', label: 'Keyboard' },
+      { id: 'basic', labelKey: 'nav.tree.basics' },
+      { id: 'selection', labelKey: 'nav.tree.selection' },
+      { id: 'lazy', labelKey: 'nav.tree.lazy' },
+      { id: 'failure', labelKey: 'nav.tree.failure' },
+      { id: 'slots', labelKey: 'nav.tree.slots' },
+      { id: 'keyboard', labelKey: 'nav.tree.keyboard' },
     ],
   },
   {
     id: 'data',
-    label: 'Data display',
+    labelKey: 'nav.data',
     icon: 'file',
     component: DataPage,
     children: [
-      { id: 'badge', label: 'Badge' },
-      { id: 'tag', label: 'Tag' },
-      { id: 'detail-list', label: 'Detail list' },
-      { id: 'link', label: 'Link' },
-      { id: 'icon', label: 'Icon' },
+      { id: 'badge', labelKey: 'nav.data.badge' },
+      { id: 'tag', labelKey: 'nav.data.tag' },
+      { id: 'detail-list', labelKey: 'nav.data.detailList' },
+      { id: 'link', labelKey: 'nav.data.link' },
+      { id: 'icon', labelKey: 'nav.data.icon' },
     ],
   },
   {
     id: 'samples',
-    label: 'Application samples',
+    labelKey: 'nav.samples',
     icon: 'home',
     component: SamplesPage,
     children: [
-      { id: 'list-detail', label: 'List & detail' },
-      { id: 'form', label: 'Form page' },
-      { id: 'flow', label: 'Modal + drawer flow' },
-      { id: 'states', label: 'Empty & error states' },
-      { id: 'rtl', label: 'RTL & long text' },
+      { id: 'list-detail', labelKey: 'nav.samples.listDetail' },
+      { id: 'form', labelKey: 'nav.samples.form' },
+      { id: 'flow', labelKey: 'nav.samples.flow' },
+      { id: 'states', labelKey: 'nav.samples.states' },
+      { id: 'rtl', labelKey: 'nav.samples.rtl' },
     ],
   },
 ]

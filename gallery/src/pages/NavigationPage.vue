@@ -2,6 +2,10 @@
 /**
  * Navigation and structure catalogue: tabs, menu, dropdown, context menu,
  * breadcrumb, divider, card, toolbar, nav.
+ *
+ * The demo data below is declared as keys and translated in `computed`s: every
+ * one of these lists is rendered by a library control, so a language switch has
+ * to reach the items that are already open.
  */
 import { computed, ref } from 'vue'
 import {
@@ -26,10 +30,14 @@ import {
   type MenuEntry,
   type NavItem,
   type TabItem,
+  type TranslateVars,
 } from '@aeroscis/jin'
 import { DemoPage, DemoSection } from '../demo/DemoSection'
+import { useI18n } from '../i18n'
 
 defineProps<{ section?: string | null }>()
+
+const { t } = useI18n()
 
 // ------------------------------------------------------------------- tabs
 const tab = ref<string | null>('overview')
@@ -37,131 +45,149 @@ const verticalTab = ref<string | null>('a')
 const manualTab = ref<string | null>('one')
 const nestedTab = ref<string | null>('files')
 
-const tabs: TabItem[] = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'activity', label: 'Activity', badge: '3' },
-  { value: 'settings', label: 'Settings' },
-  { value: 'archived', label: 'Archived', disabled: true },
-]
+const tabs = computed<TabItem[]>(() => [
+  { value: 'overview', label: t('navigation.tabs.overview') },
+  { value: 'activity', label: t('navigation.tabs.activity'), badge: '3' },
+  { value: 'settings', label: t('navigation.tabs.settings') },
+  { value: 'archived', label: t('navigation.tabs.archived'), disabled: true },
+])
 
-const manyTabs: TabItem[] = [
-  { value: 'a', label: 'Alpha' },
-  { value: 'b', label: 'Beta' },
-  { value: 'c', label: 'Gamma' },
-  { value: 'd', label: 'Delta' },
-]
+const manyTabs = computed<TabItem[]>(() => [
+  { value: 'a', label: t('navigation.tabs.alpha') },
+  { value: 'b', label: t('navigation.tabs.beta') },
+  { value: 'c', label: t('navigation.tabs.gamma') },
+  { value: 'd', label: t('navigation.tabs.delta') },
+])
 
-const manualTabs: TabItem[] = [
-  { value: 'one', label: 'First' },
-  { value: 'two', label: 'Second' },
-]
+const manualTabs = computed<TabItem[]>(() => [
+  { value: 'one', label: t('navigation.tabs.first') },
+  { value: 'two', label: t('navigation.tabs.second') },
+])
 
-const nestedTabs: TabItem[] = [
-  { value: 'files', label: 'Files' },
-  { value: 'history', label: 'History' },
-]
+const nestedTabs = computed<TabItem[]>(() => [
+  { value: 'files', label: t('navigation.tabs.files') },
+  { value: 'history', label: t('navigation.tabs.history') },
+])
 
 // ------------------------------------------------------------------- menu
-const menuItems: MenuEntry[] = [
-  { id: 'new', label: 'New item', shortcut: 'Ctrl+N' },
-  { id: 'open', label: 'Open…', shortcut: 'Ctrl+O' },
-  { id: 'recent', label: 'Open recent', items: [
-    { id: 'r1', label: 'notes.md' },
-    { id: 'r2', label: 'report.csv' },
-    { id: 'sep-inner', type: 'separator' },
-    { id: 'r-clear', label: 'Clear the list', danger: true },
-  ] },
+const menuItems = computed<MenuEntry[]>(() => [
+  { id: 'new', label: t('navigation.menu.newItem'), shortcut: 'Ctrl+N' },
+  { id: 'open', label: t('navigation.menu.open'), shortcut: 'Ctrl+O' },
+  {
+    id: 'recent',
+    label: t('navigation.menu.openRecent'),
+    items: [
+      { id: 'r1', label: 'notes.md' },
+      { id: 'r2', label: 'report.csv' },
+      { id: 'sep-inner', type: 'separator' },
+      { id: 'r-clear', label: t('navigation.menu.clearList'), danger: true },
+    ],
+  },
   { id: 'sep-1', type: 'separator' },
-  { id: 'view', label: 'Show sidebar', checked: true },
-  { id: 'wrap', label: 'Word wrap', checked: false },
+  { id: 'view', label: t('navigation.menu.showSidebar'), checked: true },
+  { id: 'wrap', label: t('navigation.menu.wordWrap'), checked: false },
   { id: 'sep-2', type: 'separator' },
-  { id: 'group-export', type: 'label', label: 'Export' },
-  { id: 'export-pdf', label: 'As PDF', keywords: 'print document' },
-  { id: 'export-csv', label: 'As CSV', keywords: 'spreadsheet comma' },
+  { id: 'group-export', type: 'label', label: t('navigation.menu.export') },
+  { id: 'export-pdf', label: t('navigation.menu.asPdf'), keywords: t('navigation.menu.asPdfKeywords') },
+  { id: 'export-csv', label: t('navigation.menu.asCsv'), keywords: t('navigation.menu.asCsvKeywords') },
   { id: 'sep-3', type: 'separator' },
-  { id: 'duplicate', label: 'Duplicate', disabled: true },
-  { id: 'delete', label: 'Delete', danger: true },
-]
+  { id: 'duplicate', label: t('navigation.menu.duplicate'), disabled: true },
+  { id: 'delete', label: t('common.delete'), danger: true },
+])
 
-const menuEvents = ref<string[]>([])
+const menuEvents = ref<{ key: string; vars?: TranslateVars }[]>([])
+const menuEventText = computed(() => menuEvents.value.map((entry) => t(entry.key, entry.vars)).join(' · '))
+
+function pushMenuEvent(entry: { key: string; vars?: TranslateVars }): void {
+  menuEvents.value = [entry, ...menuEvents.value].slice(0, 5)
+}
 
 function onMenuSelect(entry: MenuEntry): void {
-  menuEvents.value = [`selected “${entry.label}”`, ...menuEvents.value].slice(0, 5)
+  pushMenuEvent({ key: 'navigation.menu.selected', vars: { label: entry.label ?? entry.id } })
 }
 
 // --------------------------------------------------------------- dropdown
 const dropdownValue = ref<string | null>('fold')
-const dropdownItems: MenuEntry[] = [
-  { id: 'fold', label: 'Folded', checked: dropdownValue.value === 'fold' },
-  { id: 'normal', label: 'Normal', checked: dropdownValue.value === 'normal' },
-  { id: 'hide', label: 'Hidden', checked: dropdownValue.value === 'hide' },
-  { id: 'sep', type: 'separator' },
-  { id: 'configure', label: 'Configure…' },
-]
 
-const dropdownItemsReactive = computed<MenuEntry[]>(() =>
-  dropdownItems.map((item) =>
-    item.checked === undefined ? item : { ...item, checked: item.id === dropdownValue.value },
-  ),
-)
+const dropdownItems = computed<MenuEntry[]>(() => [
+  { id: 'fold', label: t('overlays.drawer.kindFolded'), checked: dropdownValue.value === 'fold' },
+  { id: 'normal', label: t('forms.radio.optionNormal'), checked: dropdownValue.value === 'normal' },
+  { id: 'hide', label: t('overlays.drawer.kindHidden'), checked: dropdownValue.value === 'hide' },
+  { id: 'sep', type: 'separator' },
+  { id: 'configure', label: t('navigation.dropdown.configure') },
+])
 
 function onDropdownSelect(entry: MenuEntry): void {
   if (['fold', 'normal', 'hide'].includes(entry.id)) {
     dropdownValue.value = entry.id
     return
   }
-  menuEvents.value = [`dropdown: “${entry.label}”`, ...menuEvents.value].slice(0, 5)
+  pushMenuEvent({ key: 'navigation.dropdown.log', vars: { label: entry.label ?? entry.id } })
 }
 
+const dropdownDisplay = computed(() => {
+  switch (dropdownValue.value) {
+    case 'fold':
+      return t('overlays.drawer.kindFolded')
+    case 'hide':
+      return t('overlays.drawer.kindHidden')
+    default:
+      return t('forms.radio.optionNormal')
+  }
+})
+
 // ----------------------------------------------------------- context menu
-const contextItems: MenuEntry[] = [
-  { id: 'rename', label: 'Rename', shortcut: 'F2' },
-  { id: 'duplicate', label: 'Duplicate', shortcut: 'Ctrl+D' },
+const contextItems = computed<MenuEntry[]>(() => [
+  { id: 'rename', label: t('navigation.context.rename'), shortcut: 'F2' },
+  { id: 'duplicate', label: t('navigation.menu.duplicate'), shortcut: 'Ctrl+D' },
   { id: 'sep', type: 'separator' },
-  { id: 'reveal', label: 'Reveal in file manager' },
+  { id: 'reveal', label: t('navigation.context.reveal') },
   { id: 'sep-2', type: 'separator' },
-  { id: 'remove', label: 'Remove', danger: true },
-]
+  { id: 'remove', label: t('navigation.context.remove'), danger: true },
+])
 
 // -------------------------------------------------------------- breadcrumb
-const crumbs = [
-  { label: 'Home', onClick: () => undefined },
-  { label: 'Collections', onClick: () => undefined },
-  { label: 'Field notes', onClick: () => undefined },
-  { label: 'Current entry', current: true },
-]
+const crumbs = computed(() => [
+  { label: t('navigation.breadcrumb.home'), onClick: () => undefined },
+  { label: t('navigation.breadcrumb.collections'), onClick: () => undefined },
+  { label: t('navigation.breadcrumb.fieldNotes'), onClick: () => undefined },
+  { label: t('navigation.breadcrumb.currentEntry'), current: true },
+])
 
-const crumbsWithHref = [
-  { label: 'Projects', href: '#projects' },
-  { label: 'Alpha', href: '#alpha' },
-  { label: 'Details' },
-]
+const crumbsWithHref = computed(() => [
+  { label: t('navigation.breadcrumb.projects'), href: '#projects' },
+  { label: t('navigation.breadcrumb.alpha'), href: '#alpha' },
+  { label: t('navigation.breadcrumb.details') },
+])
 
 // -------------------------------------------------------------------- nav
-const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', icon: 'home' },
-  { id: 'files', label: 'Files', icon: 'folder', badge: '12' },
-  { id: 'search', label: 'Search', icon: 'search' },
+const navItems = computed<NavItem[]>(() => [
+  { id: 'home', label: t('navigation.nav.home'), icon: 'home' },
+  { id: 'files', label: t('navigation.nav.files'), icon: 'folder', badge: '12' },
+  { id: 'search', label: t('navigation.nav.search'), icon: 'search' },
   {
     id: 'settings',
-    label: 'Settings',
+    label: t('navigation.nav.settings'),
     icon: 'settings',
     items: [
-      { id: 'appearance', label: 'Appearance' },
-      { id: 'shortcuts', label: 'Shortcuts' },
+      { id: 'appearance', label: t('navigation.nav.appearance') },
+      { id: 'shortcuts', label: t('navigation.nav.shortcuts') },
     ],
   },
-  { id: 'trash', label: 'Trash', icon: 'trash', disabled: true },
-]
+  { id: 'trash', label: t('navigation.nav.trash'), icon: 'trash', disabled: true },
+])
 const navCurrent = ref('files')
+const navCurrentLabel = computed(
+  () => navItems.value.find((item) => item.id === navCurrent.value)?.label ?? navCurrent.value,
+)
 
 // ---------------------------------------------------------------- toolbar
-const toolbarLast = ref('')
 const bold = ref(true)
 const italic = ref(false)
+const toolbarLast = ref('')
 
-function toolbarAction(name: string): void {
-  toolbarLast.value = name
+function toolbarAction(labelKey: string): void {
+  toolbarLast.value = labelKey
 }
 
 // ------------------------------------------------------------------- card
@@ -169,24 +195,17 @@ const cardClicks = ref(0)
 </script>
 
 <template>
-  <DemoPage
-    title="Navigation & structure"
-    lead="The controls that give a page a shape: tabs, menus, breadcrumbs, dividers, cards and toolbars. All of them share the same roving-tabindex kernel, so arrow-key behaviour is identical everywhere."
-  >
-    <DemoSection
-      title="Tabs"
-      note="Horizontal and vertical, automatic and manual activation, disabled tabs, badges, and a slot for fully custom tab content. The tab list is one tab stop; arrows move within it."
-      stacked
-    >
-      <JinTabs v-model="tab" :items="tabs" aria-label="Section tabs">
+  <DemoPage :title="t('navigation.title')" :lead="t('navigation.lead')">
+    <DemoSection :title="t('navigation.tabs.title')" :note="t('navigation.tabs.note')" stacked>
+      <JinTabs v-model="tab" :items="tabs" :aria-label="t('navigation.tabs.aria')">
         <template #overview>
-          <p class="gallery-muted">Panel content is projected per tab value, so it stays where the application puts it.</p>
+          <p class="gallery-muted">{{ t('navigation.tabs.overviewPanel') }}</p>
         </template>
         <template #activity>
-          <p class="gallery-muted">Three unread items — the badge is drawn and announced.</p>
+          <p class="gallery-muted">{{ t('navigation.tabs.activityPanel') }}</p>
         </template>
         <template #settings>
-          <p class="gallery-muted">Settings panel.</p>
+          <p class="gallery-muted">{{ t('navigation.tabs.settingsPanel') }}</p>
         </template>
       </JinTabs>
 
@@ -194,28 +213,47 @@ const cardClicks = ref(0)
 
       <div class="gallery-grid gallery-grid--two">
         <div>
-          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">Vertical</p>
-          <JinTabs v-model="verticalTab" :items="manyTabs" orientation="vertical" aria-label="Vertical tabs">
+          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">
+            {{ t('navigation.tabs.vertical') }}
+          </p>
+          <JinTabs
+            v-model="verticalTab"
+            :items="manyTabs"
+            orientation="vertical"
+            :aria-label="t('navigation.tabs.verticalAria')"
+          >
             <template #panel="{ item }">
-              <p class="gallery-muted">Content for {{ item.label }}.</p>
+              <p class="gallery-muted">{{ t('navigation.tabs.contentFor', { label: item.label }) }}</p>
             </template>
           </JinTabs>
         </div>
 
         <div>
           <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">
-            Manual activation — arrows move focus, Enter or Space selects
+            {{ t('navigation.tabs.manual') }}
           </p>
-          <JinTabs v-model="manualTab" :items="manualTabs" activation="manual" aria-label="Manual tabs">
+          <JinTabs
+            v-model="manualTab"
+            :items="manualTabs"
+            activation="manual"
+            :aria-label="t('navigation.tabs.manualAria')"
+          >
             <template #panel="{ item }">
-              <p class="gallery-muted">Selected: {{ item.label }}</p>
+              <p class="gallery-muted">{{ t('navigation.tabs.selected', { label: item.label }) }}</p>
             </template>
           </JinTabs>
         </div>
 
         <div>
-          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">Growing to fill the list</p>
-          <JinTabs v-model="nestedTab" :items="nestedTabs" :grow="true" aria-label="Growing tabs">
+          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">
+            {{ t('navigation.tabs.growing') }}
+          </p>
+          <JinTabs
+            v-model="nestedTab"
+            :items="nestedTabs"
+            :grow="true"
+            :aria-label="t('navigation.tabs.growingAria')"
+          >
             <template #panel="{ item }">
               <p class="gallery-muted">{{ item.label }}</p>
             </template>
@@ -223,8 +261,10 @@ const cardClicks = ref(0)
         </div>
 
         <div>
-          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">Custom tab content through the slot</p>
-          <JinTabs v-model="tab" :items="tabs" aria-label="Custom tabs">
+          <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">
+            {{ t('navigation.tabs.custom') }}
+          </p>
+          <JinTabs v-model="tab" :items="tabs" :aria-label="t('navigation.tabs.customAria')">
             <template #tab="{ item }">
               <JinIcon :name="item.value === 'overview' ? 'home' : item.value === 'activity' ? 'bell' : 'settings'" />
               <span>{{ item.label }}</span>
@@ -235,78 +275,67 @@ const cardClicks = ref(0)
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Menu"
-      note="One flat, keyboard-driven list. Submenus are rows whose children appear when the branch is open — the same component drives the dropdown and the context menu below, and both get the same arrow, Home/End, type-ahead and Escape behaviour."
-      stacked
-    >
+    <DemoSection :title="t('navigation.menu.title')" :note="t('navigation.menu.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
         <div>
           <p class="gallery-muted" style="margin-bottom: var(--jin-space-2)">
-            Inline menu — try ArrowRight on “Open recent”, then Escape
+            {{ t('navigation.menu.inlineHint') }}
           </p>
-          <JinMenu :items="menuItems" aria-label="Demo menu" @select="onMenuSelect" />
+          <JinMenu :items="menuItems" :aria-label="t('navigation.menu.aria')" @select="onMenuSelect" />
         </div>
 
         <div class="gallery-grid">
           <JinAlert
             tone="info"
-            title="Keyboard model"
-            description="Down/Up move, Right opens a submenu, Left closes it, Home and End jump, Escape closes the deepest thing first, and typing jumps to a matching label."
+            :title="t('navigation.menu.keyboardTitle')"
+            :description="t('navigation.menu.keyboardDescription')"
           />
           <JinAlert
             v-if="menuEvents.length > 0"
             tone="neutral"
-            title="Events"
-            :description="menuEvents.join(' · ')"
+            :title="t('navigation.menu.eventsTitle')"
+            :description="menuEventText"
           />
           <JinAlert
             tone="warning"
-            title="Disabled and dangerous rows"
-            description="Disabled rows are skipped by every navigation key. Danger rows are coloured and are given a tinted background when active, so the state is visible as well as coloured."
+            :title="t('navigation.menu.disabledTitle')"
+            :description="t('navigation.menu.disabledDescription')"
           />
         </div>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Dropdown"
-      note="A menu behind a trigger. Enter, Space or ArrowDown opens it and moves focus to the first item; Escape closes it and focus returns to the trigger."
-    >
-      <JinDropdown :items="dropdownItemsReactive" aria-label="Display state" @select="onDropdownSelect">
+    <DemoSection :title="t('navigation.dropdown.title')" :note="t('navigation.dropdown.note')">
+      <JinDropdown :items="dropdownItems" :aria-label="t('navigation.dropdown.aria')" @select="onDropdownSelect">
         <template #trigger>
           <JinButton variant="secondary">
             <template #icon><JinIcon name="filter" /></template>
-            Display: {{ dropdownValue }}
+            {{ t('navigation.dropdown.display', { value: dropdownDisplay }) }}
           </JinButton>
         </template>
       </JinDropdown>
 
       <JinDropdown
         :items="[
-          { id: 'copy', label: 'Copy', shortcut: 'Ctrl+C' },
-          { id: 'cut', label: 'Cut', shortcut: 'Ctrl+X' },
-          { id: 'paste', label: 'Paste', shortcut: 'Ctrl+V', disabled: true },
+          { id: 'copy', label: t('common.copy'), shortcut: 'Ctrl+C' },
+          { id: 'cut', label: t('navigation.toolbar.cut'), shortcut: 'Ctrl+X' },
+          { id: 'paste', label: t('navigation.toolbar.paste'), shortcut: 'Ctrl+V', disabled: true },
         ]"
-        aria-label="More actions"
+        :aria-label="t('navigation.dropdown.moreAria')"
         @select="onMenuSelect"
       >
         <template #trigger>
-          <JinButton variant="ghost" icon label="More actions">
+          <JinButton variant="ghost" icon :label="t('navigation.dropdown.moreAria')">
             <template #icon><JinIcon name="menu" /></template>
           </JinButton>
         </template>
       </JinDropdown>
 
-      <span class="gallery-muted">A dropdown with nothing but an icon and an accessible name.</span>
+      <span class="gallery-muted">{{ t('navigation.dropdown.onlyIcon') }}</span>
     </DemoSection>
 
-    <DemoSection
-      title="Context menu"
-      note="Right-click the area below, or focus it and press Shift+F10 — a context menu that ignores the keyboard is unusable. The menu is clamped into the viewport when the pointer is near an edge."
-      stacked
-    >
-      <JinContextMenu :items="contextItems" aria-label="Item actions" @select="onMenuSelect">
+    <DemoSection :title="t('navigation.context.title')" :note="t('navigation.context.note')" stacked>
+      <JinContextMenu :items="contextItems" :aria-label="t('navigation.context.aria')" @select="onMenuSelect">
         <div
           style="
             padding: var(--jin-space-6);
@@ -316,232 +345,260 @@ const cardClicks = ref(0)
           "
         >
           <JinIcon name="file" :size="1.6" />
-          <p style="margin: var(--jin-space-2) 0 0">Right-click here</p>
-          <p class="gallery-muted" style="margin: 0">Tab to it and press Shift+F10 for the keyboard route</p>
+          <p style="margin: var(--jin-space-2) 0 0">{{ t('navigation.context.rightClick') }}</p>
+          <p class="gallery-muted" style="margin: 0">{{ t('navigation.context.keyboardRoute') }}</p>
         </div>
       </JinContextMenu>
 
-      <JinAlert
-        v-if="menuEvents.length > 0"
-        tone="neutral"
-        :title="menuEvents[0]"
-      />
+      <JinAlert v-if="menuEvents.length > 0" tone="neutral" :title="menuEventText" />
     </DemoSection>
 
-    <DemoSection
-      title="Breadcrumb"
-      note="A real navigation landmark with an ordered list. The final item is marked aria-current, and separators are decorative."
-      stacked
-    >
+    <DemoSection :title="t('navigation.breadcrumb.title')" :note="t('navigation.breadcrumb.note')" stacked>
       <JinBreadcrumb :items="crumbs" />
       <JinBreadcrumb :items="crumbsWithHref" />
-      <JinBreadcrumb :items="crumbs.slice(0, 2)" aria-label="Short trail">
+      <JinBreadcrumb :items="crumbs.slice(0, 2)" :aria-label="t('navigation.breadcrumb.shortTrail')">
         <template #separator>›</template>
       </JinBreadcrumb>
       <JinBreadcrumb
         :items="[
-          { label: 'A very long first segment that should wrap rather than overflow its container gracefully' },
-          { label: 'And a second one equally long to force the issue' },
-          { label: 'Leaf', current: true },
+          { label: t('navigation.breadcrumb.longFirst') },
+          { label: t('navigation.breadcrumb.longSecond') },
+          { label: t('navigation.breadcrumb.leaf'), current: true },
         ]"
       />
     </DemoSection>
 
-    <DemoSection
-      title="Divider"
-      note="A structural rule: horizontal, vertical, spaced, and a labelled variant for separating groups inside a form."
-      stacked
-    >
+    <DemoSection :title="t('navigation.divider.title')" :note="t('navigation.divider.note')" stacked>
       <div style="display: flex; flex-direction: column; gap: var(--jin-space-3); width: 100%">
-        <p>Above</p>
+        <p>{{ t('navigation.divider.above') }}</p>
         <JinDivider />
-        <p>Below a plain rule</p>
+        <p>{{ t('navigation.divider.belowPlain') }}</p>
         <JinDivider spaced />
-        <p>Spaced rule has margin</p>
-        <JinDivider label="Or" />
-        <p>Grouped content after a labelled rule</p>
+        <p>{{ t('navigation.divider.spacedHasMargin') }}</p>
+        <JinDivider :label="t('navigation.divider.or')" />
+        <p>{{ t('navigation.divider.groupedAfter') }}</p>
         <div style="display: flex; align-items: center; height: 48px">
-          <span>Left</span>
+          <span>{{ t('navigation.divider.left') }}</span>
           <JinDivider orientation="vertical" />
-          <span>Middle</span>
+          <span>{{ t('navigation.divider.middle') }}</span>
           <JinDivider orientation="vertical" spaced />
-          <span>Right</span>
+          <span>{{ t('navigation.divider.right') }}</span>
         </div>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Card"
-      note="A surface container. The interactive variant is a real focusable surface with Enter and Space activation, not a div with a click handler."
-      stacked
-    >
+    <DemoSection :title="t('navigation.card.title')" :note="t('navigation.card.note')" stacked>
       <div class="gallery-grid gallery-grid--two">
-        <JinCard title="Base card" description="Default elevation for a panel sitting on the page.">
-          <p class="gallery-muted">Card body content.</p>
+        <JinCard
+          :title="t('navigation.card.baseTitle')"
+          :description="t('navigation.card.baseDescription')"
+        >
+          <p class="gallery-muted">{{ t('navigation.card.body') }}</p>
           <template #footer>
-            <JinButton size="sm" variant="ghost">Cancel</JinButton>
-            <JinButton size="sm" variant="primary">Save</JinButton>
+            <JinButton size="sm" variant="ghost">{{ t('common.cancel') }}</JinButton>
+            <JinButton size="sm" variant="primary">{{ t('common.save') }}</JinButton>
           </template>
         </JinCard>
 
-        <JinCard title="Raised card" description="For content that should read as floating." elevation="raised">
-          <p class="gallery-muted">A higher elevation level from the same token set.</p>
-        </JinCard>
-
-        <JinCard title="Flat card" description="No shadow at all — brutalism renders every card this way." elevation="flat">
-          <p class="gallery-muted">The difference is a token, not a variant-specific stylesheet.</p>
+        <JinCard
+          :title="t('navigation.card.raisedTitle')"
+          :description="t('navigation.card.raisedDescription')"
+          elevation="raised"
+        >
+          <p class="gallery-muted">{{ t('navigation.card.raisedBody') }}</p>
         </JinCard>
 
         <JinCard
-          title="Interactive card"
-          description="Tab to me and press Enter."
+          :title="t('navigation.card.flatTitle')"
+          :description="t('navigation.card.flatDescription')"
+          elevation="flat"
+        >
+          <p class="gallery-muted">{{ t('navigation.card.flatBody') }}</p>
+        </JinCard>
+
+        <JinCard
+          :title="t('navigation.card.interactiveTitle')"
+          :description="t('navigation.card.interactiveDescription')"
           interactive
           @activate="cardClicks += 1"
         >
-          <p class="gallery-muted">Activated {{ cardClicks }} time{{ cardClicks === 1 ? '' : 's' }}.</p>
+          <p class="gallery-muted">
+            {{
+              cardClicks === 1
+                ? t('navigation.card.activatedOne', { count: cardClicks })
+                : t('navigation.card.activatedOther', { count: cardClicks })
+            }}
+          </p>
         </JinCard>
 
         <JinCard>
           <template #header>
-            <p class="gallery-muted">A fully custom header via the slot</p>
+            <p class="gallery-muted">{{ t('navigation.card.customHeader') }}</p>
           </template>
-          <p class="gallery-muted">Body.</p>
+          <p class="gallery-muted">{{ t('navigation.card.customBody') }}</p>
         </JinCard>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Toolbar"
-      note="A horizontal action strip that is a single tab stop: arrows move between its controls, so a long toolbar does not become a Tab marathon. The last action is reported below."
-    >
-      <JinToolbar aria-label="Editor toolbar">
-        <JinTooltip content="Bold" placement="top">
+    <DemoSection :title="t('navigation.toolbar.title')" :note="t('navigation.toolbar.note')">
+      <JinToolbar :aria-label="t('navigation.toolbar.aria')">
+        <JinTooltip :content="t('navigation.toolbar.bold')" placement="top">
           <JinButton
             :variant="bold ? 'primary' : 'ghost'"
             size="sm"
             icon
-            label="Bold"
-            @click="bold = !bold; toolbarAction('bold')"
+            :label="t('navigation.toolbar.bold')"
+            @click="bold = !bold; toolbarAction('navigation.toolbar.bold')"
           >
             <template #icon><span style="font-weight: 800">B</span></template>
           </JinButton>
         </JinTooltip>
-        <JinTooltip content="Italic" placement="top">
+        <JinTooltip :content="t('navigation.toolbar.italic')" placement="top">
           <JinButton
             :variant="italic ? 'primary' : 'ghost'"
             size="sm"
             icon
-            label="Italic"
-            @click="italic = !italic; toolbarAction('italic')"
+            :label="t('navigation.toolbar.italic')"
+            @click="italic = !italic; toolbarAction('navigation.toolbar.italic')"
           >
             <template #icon><span style="font-style: italic">I</span></template>
           </JinButton>
         </JinTooltip>
         <JinDivider orientation="vertical" />
-        <JinButton size="sm" variant="ghost" @click="toolbarAction('link')">
+        <JinButton size="sm" variant="ghost" @click="toolbarAction('navigation.toolbar.link')">
           <template #icon><JinIcon name="link" /></template>
-          Link
+          {{ t('navigation.toolbar.link') }}
         </JinButton>
-        <JinButton size="sm" variant="ghost" @click="toolbarAction('copy')">
+        <JinButton size="sm" variant="ghost" @click="toolbarAction('common.copy')">
           <template #icon><JinIcon name="copy" /></template>
-          Copy
+          {{ t('common.copy') }}
         </JinButton>
         <JinButton size="sm" variant="ghost" disabled>
           <template #icon><JinIcon name="trash" /></template>
-          Delete
+          {{ t('common.delete') }}
         </JinButton>
         <span class="jin-toolbar__spacer" />
-        <JinTooltip content="Export" placement="top">
-          <JinButton size="sm" variant="ghost" icon label="Export" @click="toolbarAction('export')">
+        <JinTooltip :content="t('navigation.toolbar.export')" placement="top">
+          <JinButton
+            size="sm"
+            variant="ghost"
+            icon
+            :label="t('navigation.toolbar.export')"
+            @click="toolbarAction('navigation.toolbar.export')"
+          >
             <template #icon><JinIcon name="download" /></template>
           </JinButton>
         </JinTooltip>
       </JinToolbar>
 
-      <span v-if="toolbarLast" class="gallery-muted">Last action: {{ toolbarLast }}</span>
+      <span v-if="toolbarLast" class="gallery-muted">
+        {{ t('navigation.toolbar.lastAction', { action: t(toolbarLast) }) }}
+      </span>
 
-      <JinToolbar quiet aria-label="Quiet toolbar">
-        <JinBadge tone="info" label="quiet variant" />
-        <JinButton size="sm" variant="ghost">No surface</JinButton>
-        <JinSwitch size="sm" label="Inline switch" />
+      <JinToolbar quiet :aria-label="t('navigation.toolbar.quietAria')">
+        <JinBadge tone="info" :label="t('navigation.toolbar.quietBadge')" />
+        <JinButton size="sm" variant="ghost">{{ t('navigation.toolbar.noSurface') }}</JinButton>
+        <JinSwitch size="sm" :label="t('navigation.toolbar.inlineSwitch')" />
       </JinToolbar>
     </DemoSection>
 
     <DemoSection
-      title="Nav"
-      note="A navigation landmark for a sidebar. Nested items render as an indented sub-list; the current item carries aria-current so screen readers can announce it."
+      :title="t('navigation.nav.title')"
+      :note="t('navigation.nav.note')"
       stacked
       :plain="false"
     >
       <div class="gallery-grid gallery-grid--two">
-        <JinNav :items="navItems" :current="navCurrent" aria-label="Demo navigation" @select="(item) => (navCurrent = item.id)" />
+        <JinNav
+          :items="navItems"
+          :current="navCurrent"
+          :aria-label="t('navigation.nav.aria')"
+          @select="(item) => (navCurrent = item.id)"
+        />
 
         <div class="gallery-grid">
           <JinAlert
             tone="info"
-            title="Presentational by design"
-            description="Nav renders labels, icons and badges and reports activation. It does not know what a route is, so it works the same in a Tauri window, a router app and a plain page."
+            :title="t('navigation.nav.presentationalTitle')"
+            :description="t('navigation.nav.presentationalDescription')"
           />
           <JinAlert
             v-if="navCurrent"
             tone="neutral"
-            :title="`Current item: ${navCurrent}`"
+            :title="t('navigation.nav.current', { id: navCurrentLabel })"
           />
         </div>
       </div>
     </DemoSection>
 
-    <DemoSection
-      title="Structure composes"
-      note="These controls are meant to be combined. A card with a toolbar and tabs, inside a two-column layout, is the shape most application screens end up taking."
-      stacked
-    >
-      <JinCard title="Composed panel" description="Toolbar, tabs and content in one card.">
+    <DemoSection :title="t('navigation.compose.title')" :note="t('navigation.compose.note')" stacked>
+      <JinCard
+        :title="t('navigation.compose.cardTitle')"
+        :description="t('navigation.compose.cardDescription')"
+      >
         <div class="gallery-grid">
-          <JinToolbar quiet aria-label="Panel toolbar">
-            <JinTextField size="sm" placeholder="Filter rows…" clearable style="max-width: 240px" />
+          <JinToolbar quiet :aria-label="t('navigation.compose.panelAria')">
+            <JinTextField
+              size="sm"
+              :placeholder="t('navigation.compose.filterPlaceholder')"
+              clearable
+              style="max-width: 240px"
+            />
             <span class="jin-toolbar__spacer" />
-            <JinButton size="sm" variant="ghost" icon label="Refresh">
+            <JinButton size="sm" variant="ghost" icon :label="t('navigation.compose.refresh')">
               <template #icon><JinIcon name="refresh" /></template>
             </JinButton>
-            <JinButton size="sm" variant="primary">Add row</JinButton>
+            <JinButton size="sm" variant="primary">{{ t('navigation.compose.addRow') }}</JinButton>
           </JinToolbar>
 
           <JinDivider />
 
-          <JinTabs v-model="tab" :items="tabs.slice(0, 3)" aria-label="Panel tabs">
+          <JinTabs v-model="tab" :items="tabs.slice(0, 3)" :aria-label="t('navigation.compose.panelTabsAria')">
             <template #panel="{ item }">
-              <JinAlert tone="neutral" :title="`${item.label} panel`" description="Each tab can hold anything." />
+              <JinAlert
+                tone="neutral"
+                :title="t('navigation.compose.panelTitle', { label: item.label })"
+                :description="t('navigation.compose.panelDescription')"
+              />
             </template>
           </JinTabs>
         </div>
       </JinCard>
 
-      <JinDivider label="Layout helpers" />
+      <JinDivider :label="t('navigation.compose.layoutHelpers')" />
 
       <div class="gallery-grid gallery-grid--three">
-        <JinCard title="Column stack" description="Vertical rhythm from space tokens.">
+        <JinCard
+          :title="t('navigation.compose.stackTitle')"
+          :description="t('navigation.compose.stackDescription')"
+        >
           <div class="jin-stack">
-            <JinBadge tone="success" label="step 1" />
-            <JinBadge tone="info" label="step 2" />
-            <JinBadge tone="neutral" label="step 3" />
+            <JinBadge tone="success" :label="t('navigation.compose.step', { index: 1 })" />
+            <JinBadge tone="info" :label="t('navigation.compose.step', { index: 2 })" />
+            <JinBadge tone="neutral" :label="t('navigation.compose.step', { index: 3 })" />
           </div>
         </JinCard>
 
-        <JinCard title="Row cluster" description="Wraps when space runs out.">
+        <JinCard
+          :title="t('navigation.compose.clusterTitle')"
+          :description="t('navigation.compose.clusterDescription')"
+        >
           <div class="jin-cluster">
-            <JinTag label="one" removable />
-            <JinTag label="two" removable />
-            <JinTag label="three" removable />
-            <JinTag label="four" removable />
+            <JinTag :label="t('navigation.compose.one')" removable />
+            <JinTag :label="t('navigation.compose.two')" removable />
+            <JinTag :label="t('navigation.compose.three')" removable />
+            <JinTag :label="t('navigation.compose.four')" removable />
           </div>
         </JinCard>
 
-        <JinCard title="Selection" description="A tiny select in a card header.">
+        <JinCard
+          :title="t('navigation.compose.selectionTitle')"
+          :description="t('navigation.compose.selectionDescription')"
+        >
           <JinSelect
             :options="[
-              { value: 'a', label: 'Option A' },
-              { value: 'b', label: 'Option B' },
+              { value: 'a', label: t('navigation.compose.optionA') },
+              { value: 'b', label: t('navigation.compose.optionB') },
             ]"
             model-value="a"
             size="sm"

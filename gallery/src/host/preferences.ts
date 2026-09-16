@@ -3,55 +3,62 @@
  * deliberately never touches localStorage.
  */
 import type { JinMode } from '@aeroscis/jin'
+import type { GalleryLocale } from '../i18n'
 
 const STYLE_KEY = 'jin-gallery.style'
 const MODE_KEY = 'jin-gallery.mode'
+const LOCALE_KEY = 'jin-gallery.locale'
 
+/**
+ * The catalogue of styles. Labels and notes are dictionary keys rather than
+ * sentences, because the switcher is part of the interface and is translated
+ * with the rest of it.
+ */
 export const AVAILABLE_STYLES = [
   {
     id: 'jin',
-    label: 'Jin · 锦',
-    note: 'The house style: a limited palette on a warp/weft grid, gold thread for boundaries and focus, silk sheen instead of drop shadows.',
+    labelKey: 'app.style.jin.label',
+    noteKey: 'app.style.jin.note',
   },
   {
     id: 'dimensional-layering',
-    label: 'Dimensional Layering',
-    note: 'Soft depth with four elevation levels and generous radii. The plain modern baseline.',
+    labelKey: 'app.style.dimensional-layering.label',
+    noteKey: 'app.style.dimensional-layering.note',
   },
   {
     id: 'glassmorphism',
-    label: 'Glassmorphism',
-    note: 'Translucent panels over a coloured ground, blurred by --jin-blur and edged with a 1px light line. The style that needs the depth tokens to be real.',
+    labelKey: 'app.style.glassmorphism.label',
+    noteKey: 'app.style.glassmorphism.note',
   },
   {
     id: 'neumorphism',
-    label: 'Neumorphism',
-    note: 'One material, extruded and pressed: a panel is the colour of the page, and only a light-and-shade pair of shadows says which way it faces.',
+    labelKey: 'app.style.neumorphism.label',
+    noteKey: 'app.style.neumorphism.note',
   },
   {
     id: 'flat-design',
-    label: 'Flat Design',
-    note: 'Solid colour on solid colour with a 1px line between: no gradient, no shadow, no blur. Depth removed on purpose rather than left unset.',
+    labelKey: 'app.style.flat-design.label',
+    noteKey: 'app.style.flat-design.note',
   },
   {
     id: 'claymorphism',
-    label: 'Claymorphism',
-    note: 'Chunky pastel clay: 3px rims, 20px radii, a matte gradient, and a solid offset under each panel that reads as thickness.',
+    labelKey: 'app.style.claymorphism.label',
+    noteKey: 'app.style.claymorphism.note',
   },
   {
     id: 'minimalism-and-swiss-style',
-    label: 'Minimalism & Swiss Style',
-    note: 'The grid and the type do the work: monochrome, zero radius, zero shadow, and one red as the only colour in the page.',
+    labelKey: 'app.style.minimalism-and-swiss-style.label',
+    noteKey: 'app.style.minimalism-and-swiss-style.note',
   },
   {
     id: 'neubrutalism',
-    label: 'Neubrutalism',
-    note: 'Brutalism with a hard offset shadow and a poster palette: 3px black outlines, 5px solid offsets, no gradients, no blur.',
+    labelKey: 'app.style.neubrutalism.label',
+    noteKey: 'app.style.neubrutalism.note',
   },
   {
     id: 'brutalism',
-    label: 'Brutalism',
-    note: 'Zero radius, no shadows, no motion, thick visible borders. The token-contract stress test.',
+    labelKey: 'app.style.brutalism.label',
+    noteKey: 'app.style.brutalism.note',
   },
 ] as const
 
@@ -77,5 +84,28 @@ export function savePreferences(snapshot: { style: string; mode: JinMode }): voi
     localStorage.setItem(MODE_KEY, snapshot.mode)
   } catch {
     // A gallery that cannot persist a preference still works; say nothing.
+  }
+}
+
+/**
+ * The stored language, or the browser's when nothing was ever chosen — a
+ * Chinese browser should not have to be told twice. `null` means "no opinion",
+ * and the caller decides the default.
+ */
+export function loadLocale(): GalleryLocale | null {
+  if (typeof localStorage !== 'undefined') {
+    const stored = localStorage.getItem(LOCALE_KEY)
+    if (stored === 'en' || stored === 'zh') return stored
+  }
+  if (typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('zh')) return 'zh'
+  return null
+}
+
+export function saveLocale(locale: GalleryLocale): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.setItem(LOCALE_KEY, locale)
+  } catch {
+    // Same as above: the choice still applies for this session.
   }
 }
