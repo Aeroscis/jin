@@ -11,6 +11,14 @@ updates:
     groups:
       devtools:
         dependency-type: development
+    ignore:
+      # TypeScript 7 is the native compiler and no longer ships the JavaScript
+      # Compiler API that unplugin-dts drives to emit declarations, so the build
+      # fails at `prepare` — i.e. inside `npm ci`, before any check runs. The
+      # documented migration is to install `@typescript/typescript6` alongside
+      # it, which is a toolchain-wide move done deliberately, not a weekly chore.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
