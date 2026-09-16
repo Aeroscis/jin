@@ -1,0 +1,18 @@
+# Dependabot runs on the GitHub mirror. Dev dependencies only — the library
+# has no runtime dependencies, so these PRs are tooling updates, each gated
+# by the ci workflow before it can land.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      devtools:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

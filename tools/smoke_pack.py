@@ -34,8 +34,11 @@ RESET = "\033[0m"
 # What a consumer's import map points at, and therefore what the tarball owes it.
 REQUIRED_IN_TARBALL = [
     "package/dist/jin.js",
+    # Declarations ship as one api-extractor bundle; there is no per-module
+    # tree to assert on. The scratch project's own typecheck below is what
+    # proves the bundle is complete.
     "package/dist/index.d.ts",
-    "package/dist/components/JinButton.vue.d.ts",
+    "package/styles.css.d.ts",
     "package/src/styles/jin.css",
     "package/themes/jin.css",
     "package/themes/jin.dark.css",

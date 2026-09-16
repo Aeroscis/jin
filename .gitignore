@@ -4,6 +4,7 @@ node_modules/
 # build output
 dist/
 gallery/dist/
+coverage/
 
 # scratch project the package smoke test builds in
 .smoke/

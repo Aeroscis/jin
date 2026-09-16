@@ -18,7 +18,11 @@ export default defineConfig({
       // Emit declarations flat against dist/ (index.d.ts, components/…) rather
       // than under dist/src/, so `types` resolves the way consumers expect.
       entryRoot: 'src',
-      rollupTypes: false,
+      // Bundle the declarations into the single index.d.ts. The per-module
+      // tree uses extensionless relative imports, which Node16 resolution
+      // refuses — arethetypeswrong reported one failure per import. One file
+      // has no relative imports at all, and the library has one entry point.
+      bundleTypes: true,
     }),
   ],
   build: {

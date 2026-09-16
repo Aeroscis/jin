@@ -293,13 +293,22 @@ Not a checklist bolted on afterwards — it is why several modules exist at all.
 
 ```bash
 npm install           # also builds dist/ (the `prepare` script)
+npm run hooks         # one time per clone: wire the git hooks (pre-commit, commit-msg)
 npm run test          # pure logic + component tests
+npm run test:coverage # the same, with a coverage floor on src/core
 npm run check         # the six discipline checks + the contrast audit
+npm run check:pack    # publint + arethetypeswrong on the packed tarball
 npm run typecheck
-npm run verify        # all three of the above, in order
-npm run build         # dist/: ESM + .d.ts + source maps
+npm run verify        # check, test, typecheck and check:pack, in order
+npm run build         # dist/: ESM + one bundled index.d.ts + source maps
 npm run smoke         # pack the library and build a consumer project against it
 ```
+
+Two git hooks keep the conventions mechanical: `pre-commit` runs the token checks and
+`commit-msg` runs commitlint against the `type(scope): summary` convention. They live in
+`.husky/` and are wired by `npm run hooks` — deliberately not by `prepare`, because `prepare`
+also runs when the library is installed as a git dependency, and writing git hooks into a
+consumer's checkout would be wrong.
 
 ### Packaging
 
@@ -315,9 +324,17 @@ answers — the built one, and the `source` one a linked checkout asks for:
 
 The stylesheet ships as written rather than pre-built: the consumer's bundler minifies it either
 way, and one file that is the same in both modes cannot drift from itself. `npm pack` includes
-`dist/` (ESM, declarations, source maps), `src/` (the stylesheet, and the sources the maps point
-at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence — 161 files,
-256 kB packed (0.2.0 shipped 149 files, 246 kB; the twelve files since are the new styles).
+`dist/` (ESM, source maps, and a single bundled `index.d.ts` — api-extractor rolls the
+per-module declarations into one file, because the extensionless relative imports in the
+unbundled tree fail Node16 type resolution), `src/` (the stylesheet, and the sources the maps
+point at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence —
+97 files, 258 kB packed (down from 161 files: the per-module declaration tree is gone).
+
+`npm run check:pack` audits the publish surface itself and is part of `verify`: publint
+validates `exports` and `files`, and arethetypeswrong type-resolves every entry point under
+node10, node16 and bundler resolution against the real tarball. One rule is ignored on
+purpose — `cjs-resolves-to-esm`: the package is ESM-only by design, so a `require()` that
+resolves to ESM is expected, not a defect.
 
 ### Publishing
 

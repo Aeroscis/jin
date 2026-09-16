@@ -30,6 +30,7 @@
     "src",
     "themes",
     "contracts",
+    "styles.css.d.ts",
     "README.md",
     "CREDITS.md",
     "CHANGELOG.md"
@@ -47,7 +48,10 @@
       "import": "./dist/jin.js",
       "default": "./dist/jin.js"
     },
-    "./styles.css": "./src/styles/jin.css",
+    "./styles.css": {
+      "types": "./styles.css.d.ts",
+      "default": "./src/styles/jin.css"
+    },
     "./themes/*": "./themes/*",
     "./contracts/*": "./contracts/*",
     "./package.json": "./package.json"
@@ -58,13 +62,16 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "build": "vite build",
     "check": "python tools/check_tokens.py && python tools/check_contrast.py",
-    "verify": "npm run check && npm run test && npm run typecheck",
+    "check:pack": "publint && attw --pack . --ignore-rules cjs-resolves-to-esm",
+    "verify": "npm run check && npm run test && npm run typecheck && npm run check:pack",
     "smoke": "python tools/smoke_pack.py",
     "prepare": "npm run build",
     "prepublishOnly": "npm run verify && npm run smoke",
+    "hooks": "husky",
     "gallery": "python start_gallery.py",
     "gallery:build": "python start_gallery.py --build",
     "gallery:tauri": "python start_gallery.py --tauri",
@@ -75,9 +82,16 @@
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@microsoft/api-extractor": "^7.59.1",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vitest/coverage-v8": "^5.0.1",
     "@vue/test-utils": "^2.5.0",
+    "husky": "^9.1.7",
     "jsdom": "^30.0.1",
+    "publint": "^0.3.24",
     "typescript": "~5.9.3",
     "vite": "^8.3.0",
     "vite-plugin-dts": "^5.1.0",

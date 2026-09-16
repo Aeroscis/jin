@@ -31,9 +31,9 @@ list, with the contract axis each style exercises, is docs/theming.md §8.
 | `themes/` | 18 files: nine styles (`jin`, `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`, `claymorphism`, `flat-design`, `neubrutalism`, `brutalism`, `dimensional-layering`), each with a `.dark` variant. |
 | `contracts/` | `tokens.json` (80 tokens) and `strings.json` (25 UI strings). |
 | `docs/` | `architecture.md` (why it is shaped this way), `components.md` (API reference), `consuming.md`, `theming.md`. |
-| `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` link, so edits are live there. |
+| `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` link, so edits are live there. Its `src/i18n/` holds the en/zh dictionaries, the locale state, and the `t` it passes to `JinUI`. |
 | `tools/*.py` | `check_tokens.py` (six discipline checks), `check_contrast.py`, `smoke_pack.py`. |
-| `tests/` | Vitest. Pure logic runs in Node; component tests opt into jsdom with a `// @vitest-environment jsdom` docblock. |
+| `tests/` | Vitest. Pure logic runs in Node; component tests opt into jsdom with a `// @vitest-environment jsdom` docblock. `gallery-i18n.spec.ts` guards the gallery dictionaries against the pages that use them. |
 
 ## Hard rules
 
@@ -91,7 +91,7 @@ breaks one gets reverted rather than adjusted.
 ## Definition of done
 
 ```bash
-npm run verify     # check_tokens.py + check_contrast.py + vitest + vue-tsc
+npm run verify     # check_tokens.py + check_contrast.py + vitest + vue-tsc + publint/attw
 npm run smoke      # packs the library and builds a consumer against the tarball (before publish)
 npm run gallery    # browser checkpoint — required for portal, positioning or theme changes
 ```
