@@ -13,7 +13,7 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The discipline checkers (tools/*.py) are Python; npm scripts invoke
       # them as `python`, which only setup-python guarantees on the runner.
