@@ -1,0 +1,36 @@
+name: publish
+
+# Cutting a release stays exactly as CHANGELOG.md describes: one commit on
+# main that bumps package.json and adds the entry, tagged vX.Y.Z. The dual
+# push carries the tag here, and this workflow is the publish button.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  # OIDC token for npm trusted publishing and --provenance. No npm token is
+  # stored anywhere; the package's trusted-publisher setting names this file.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - run: npm ci
+
+      # prepublishOnly runs `verify && smoke` first, so the gates still
+      # cannot be skipped — they just run here instead of on a laptop.
+      - run: npm publish --provenance --access public
