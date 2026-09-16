@@ -30,7 +30,7 @@ list, with the contract axis each style exercises, is docs/theming.md §8.
 | `src/styles/jin.css` | The base stylesheet — an explicit consumer import, never a side effect of the module. |
 | `themes/` | 18 files: nine styles (`jin`, `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`, `claymorphism`, `flat-design`, `neubrutalism`, `brutalism`, `dimensional-layering`), each with a `.dark` variant. |
 | `contracts/` | `tokens.json` (80 tokens) and `strings.json` (25 UI strings). |
-| `docs/` | `architecture.md` (why it is shaped this way), `components.md` (API reference), `consuming.md`, `theming.md`. |
+| `docs/` | `architecture.md` (why it is shaped this way), `components.md` (API reference), `consuming.md`, `theming.md`, and `README.en.md`, the English twin of the root README. |
 | `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` link, so edits are live there. Its `src/i18n/` holds the en/zh dictionaries, the locale state, and the `t` it passes to `JinUI`. |
 | `tools/*.py` | `check_tokens.py` (six discipline checks), `check_contrast.py`, `smoke_pack.py`. |
 | `tests/` | Vitest. Pure logic runs in Node; component tests opt into jsdom with a `// @vitest-environment jsdom` docblock. `gallery-i18n.spec.ts` guards the gallery dictionaries against the pages that use them. |
@@ -103,8 +103,9 @@ npm run gallery    # browser checkpoint — required for portal, positioning or 
   positioning and theming changes need eyes in the gallery; `tests/portal.spec.ts` only pins the
   stylesheet rule at the source level.
 - Docs move with the code: `docs/components.md` for the API, `docs/theming.md` for measured contrast
-  numbers (compute them — `tools/check_contrast.py` is the source of truth), and for a release a
-  `CHANGELOG.md` entry plus a `package.json` bump in one commit on `main`, tagged `vX.Y.Z`.
+numbers (compute them — `tools/check_contrast.py` is the source of truth), the README in both of its
+languages, and for a release a `CHANGELOG.md` entry plus a `package.json` bump in one commit on
+`main`, tagged `vX.Y.Z`.
 
 ## Environment gotchas
 
@@ -118,8 +119,11 @@ npm run gallery    # browser checkpoint — required for portal, positioning or 
 
 ## Conventions
 
-- Code, comments, docs, filenames and commit messages are English, including when the conversation
-  about them is not. Commits follow `type(scope): summary` — `feat`, `fix`, `docs`, `chore`.
+- Code, comments, filenames and commit messages are English, including when the conversation about
+  them is not; so is everything under `docs/`, except `docs/theming.md`, which is written in Chinese.
+  `README.md` is the one root file that is Chinese, and `docs/README.en.md` is its English twin: the
+  two are one document in two languages, so a change to either is a change to both. Commits follow
+  `type(scope): summary` — `feat`, `fix`, `docs`, `chore`.
 - Comments state a constraint the code cannot show. They do not narrate the change, the next line,
   or why the change is correct.
 - The public surface is what `src/index.ts` exports; a new export is an API decision, so it needs a

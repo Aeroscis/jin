@@ -1,64 +1,63 @@
+[English](docs/README.en.md) | **简体中文**
+
+> 本文件是中文版；英文版在 [`docs/README.en.md`](docs/README.en.md)。`docs/` 下的文档目前除
+> [`docs/theming.md`](docs/theming.md)（中文）外都是英文。
+
 # Jin · 锦
 
-A token-driven Vue 3 control library for desktop applications.
+面向桌面应用、以令牌驱动的 Vue 3 控件库。
 
-**What the name means.** 锦 is brocade: a fabric woven from many small repeated units, dyed in
-many colourways. That is the shape of this library — components are the repeat units, themes are the
-colourways. It is the Chinese word, read as `jin`, not a Japanese reading of it.
-
----
-
-## The two ideas the library is built on
-
-**1. Tokens are the only interface between the library and an application.** A theme does not just
-set colours. It declares shape, depth, texture, motion, typography and density too, because the
-styles this library has to support differ far more in *form* than in hue: one has 20px radii and
-springy motion, another has square corners and no animations at all. All 80 contract tokens are
-listed in [`contracts/tokens.json`](contracts/tokens.json) and every theme file defines every one
-of them.
-
-**2. Logic is separate from rendering.** Every state machine — anchored positioning, focus traps and
-focus return, roving tabindex navigation, menu and tree navigation, hotkey recording, the overlay
-stack, the toast queue — lives in plain TypeScript under `src/core/`. None of it imports Vue and all
-of it is unit tested without a browser. Components only render and bind events. This is what makes
-the behaviour shared across applications instead of re-implemented per control.
+**名字的含义。** 锦是提花织物：由许多重复的小单元织成，可染成多种配色。这正是本库的形状——
+组件是重复单元，主题是配色。它是中文词，读作 `jin`，不是它的日文读音。
 
 ---
 
-## Install
+## 这个库建立在两个想法之上
+
+**1. 令牌是库与应用之间唯一的接口。** 主题设置的不只是颜色。它同时声明形状、深度、质感、动效、
+字体与密度——因为这个库要支持的风格，在*形制*上的差异远大于在色相上的差异：一种有 20px 圆角和
+弹性动效，另一种是直角、完全没有动画。80 个契约令牌全部列在
+[`contracts/tokens.json`](contracts/tokens.json)，每个主题文件都完整定义这 80 个。
+
+**2. 逻辑与渲染分离。** 每一个状态机——锚定定位、焦点陷阱与焦点归还、roving tabindex 导航、菜单
+与树导航、热键录制、浮层栈、toast 队列——都在 `src/core/` 下用纯 TypeScript 实现。它们没有一个
+import Vue，全部可以在没有浏览器的情况下单元测试。组件只负责渲染和绑定事件。这正是行为能在多个
+应用之间共享、而不是每个控件各写一遍的原因。
+
+---
+
+## 安装
 
 ```bash
-npm install /path/to/jin                  # a checkout on this machine
-npm install ./aeroscis-jin-0.3.0.tgz      # a tarball from `npm pack`
-# No registry release yet. When there is one it will be
-# `npm install @aeroscis/jin`; see Packaging for why it is scoped.
+npm install /path/to/jin                  # 本机的一个 checkout
+npm install ./aeroscis-jin-0.3.0.tgz      # `npm pack` 出来的 tarball
+# 尚未发布到 registry。发布后是 `npm install @aeroscis/jin`；
+# 为什么是 scoped 包名见「打包」一节。
 ```
 
-`vue` is a **peer** dependency: the library never ships its own copy.
+`vue` 是 **peer 依赖**：本库从不自带一份自己的 Vue。
 
-Three imports, all in the entry file:
+三行 import，都写在入口文件里：
 
 ```ts
-import { JinUI } from '@aeroscis/jin'              // the plugin and the components you use
-import '@aeroscis/jin/styles.css'                  // the base stylesheet — required
-import '@aeroscis/jin/themes/jin.css'              // a style (jin is the default)
-import '@aeroscis/jin/themes/jin.dark.css'         // and its mode
+import { JinUI } from '@aeroscis/jin'              // 插件，以及你要用的组件
+import '@aeroscis/jin/styles.css'                  // 基础样式表 —— 必需
+import '@aeroscis/jin/themes/jin.css'              // 一个风格（jin 是默认风格）
+import '@aeroscis/jin/themes/jin.dark.css'         // 以及它的模式
 ```
 
-The base stylesheet is an import the application writes rather than something the plugin pulls in
-by itself, and that is deliberate. A stylesheet imported from inside a dependency can be dropped by
-the consumer's bundler — silently, because the controls still render, and nothing is reported
-anywhere — so it is an import that cannot be dropped. If it is missing at startup the plugin says so
-once, by name.
+基础样式表由应用自己写下 import，而不是插件自动引入，这是刻意的。从依赖内部 import 进来的样式表
+可能被使用方的打包器丢掉——而且是静默的：控件照常渲染，哪里都不会报错——所以它必须是应用自己写的、
+丢不掉的那一行 import。启动时如果它没加载，插件会带上名字提示一次。
 
-### Working on the library and an application at the same time
+### 同时开发库和应用
 
-A `file:` dependency that reads the library's sources makes an edit visible with no rebuild:
+`file:` 依赖直接读库的源码，改完立刻可见，不需要重新构建：
 
 ```jsonc
-// package.json of the consuming application
+// 使用方应用的 package.json
 {
-  "dependencies": { "@aeroscis/jin": "file:../jin" }    // or an npm workspace entry
+  "dependencies": { "@aeroscis/jin": "file:../jin" }    // 或一个 npm workspace 条目
 }
 ```
 
@@ -66,43 +65,38 @@ A `file:` dependency that reads the library's sources makes an edit visible with
 // vite.config.ts
 export default defineConfig({
   resolve: {
-    // Take the library's `source` entries instead of its built ones.
+    // 读库的 `source` 入口，而不是构建产物。
     conditions: ['source'],
-    // Without this the linked library brings a second copy of Vue, and the
-    // symptom is silent reactivity breakage rather than an error.
+    // 少了这一行，被链接的库会带进第二份 Vue，而症状是响应式静默失效，
+    // 不是报错。
     dedupe: ['vue'],
   },
   server: {
-    // The library lives outside the app root, so the dev server must be
-    // allowed to read it.
+    // 库在应用根目录之外，dev server 需要被允许读它。
     fs: { allow: ['..'] },
   },
 })
 ```
 
 ```jsonc
-// tsconfig.json — the same condition, for the type checker
+// tsconfig.json —— 同一个条件，给类型检查器用
 {
   "compilerOptions": { "customConditions": ["source"] }
 }
 ```
 
-Two lines in total, one per tool: `resolve.conditions` decides what the bundler runs,
-`customConditions` decides what the editor and `vue-tsc` read. Without the second one the types come
-from `dist/index.d.ts`, which is one build behind whatever you are editing.
+一共两行，一个工具一行：`resolve.conditions` 决定打包器运行什么，`customConditions` 决定编辑器和
+`vue-tsc` 读什么。少了后面那一条，类型来自 `dist/index.d.ts`，永远落后你正在编辑的源码一个构建。
 
-`npm install` inside the library builds `dist/` (its `prepare` script), so the dependency also
-resolves without the `source` condition — that path reads the built ESM and declarations, which is
-what a tarball or registry install gets. Both are verified mechanically: the Gallery builds and type
-checks in source mode, and `npm run smoke` packs the library, installs the tarball into a scratch
-project and builds it against `dist/`, asserting that the stylesheet and the contracts arrive and
-that the shipped declarations type-check.
-[`docs/consuming.md`](docs/consuming.md) is the long form, including the symptoms of getting it
-wrong.
+在库目录里跑 `npm install` 会构建 `dist/`（它的 `prepare` 脚本），所以不启用 `source` 条件也能
+解析——那条路径读的是构建后的 ESM 与声明文件，也就是 tarball 或从 registry 安装时拿到的东西。
+两条路径都有机械验证：Gallery 以 source 模式构建并做类型检查；`npm run smoke` 则打包本库、把
+tarball 装进一个临时项目、对 `dist/` 构建它，并断言样式表与契约文件到位、随包发布的声明文件能通过
+类型检查。[`docs/consuming.md`](docs/consuming.md)（英文）是长文，包括弄错时的症状。
 
 ---
 
-## Use
+## 使用
 
 ```ts
 // main.ts
@@ -115,7 +109,7 @@ import App from './App.vue'
 
 createApp(App)
   .use(JinUI, {
-    // All three are optional: `app.use(JinUI)` on its own is a valid install.
+    // 三项都是可选的：只写 `app.use(JinUI)` 也是一次合法的安装。
     t: (key, vars) => i18n.t(key, vars),
     capabilities: {
       pickFolder: async () => '/some/path',
@@ -149,24 +143,23 @@ async function loadChildren(node: TreeNode): Promise<TreeNode[]> {
 </template>
 ```
 
-### The three injection points
+### 三个注入点
 
-| Option | What it does | If you omit it |
+| 选项 | 作用 | 省略时 |
 | --- | --- | --- |
-| `t` | Translates the library's UI strings | The library's readable English defaults are used |
-| `capabilities` | Supplies `pickFolder` / `openExternal` / clipboard access | Controls that need them hide the affordance instead of failing |
-| `theme` | Persists style and mode; the library never touches storage itself | Style and mode live for the session only |
+| `t` | 翻译本库的 UI 文案 | 使用本库可读的英文默认值 |
+| `capabilities` | 提供 `pickFolder` / `openExternal` / 剪贴板能力 | 需要它们的控件会隐藏入口，而不是失败 |
+| `theme` | 持久化风格与模式；本库自己从不碰存储 | 风格与模式只在本次会话内有效 |
 
-The library needs 25 strings. They are declared in
-[`contracts/strings.json`](contracts/strings.json); no key contains a business word, because the
-library has no business vocabulary to translate. An application whose dictionary is keyed by source
-text (Chinese, say) writes a small mapping layer — that layer belongs to the application.
+本库需要 25 条文案，声明在 [`contracts/strings.json`](contracts/strings.json)；没有任何一个 key
+含业务词，因为本库没有业务词汇可翻。字典以源文本（比如中文）为 key 的应用，自己写一层映射——
+那一层属于应用。
 
 ---
 
-## Theming
+## 主题
 
-Two orthogonal axes, set as attributes on `<html>`:
+两条正交的轴，作为属性设在 `<html>` 上：
 
 ```html
 <html data-jin-style="jin" data-jin-mode="dark">
@@ -174,293 +167,263 @@ Two orthogonal axes, set as attributes on `<html>`:
 
 | | |
 | --- | --- |
-| `data-jin-style` | Which visual language: `jin` (default) plus eight catalogue styles — see the table below |
-| `data-jin-mode` | `dark` (Jin's signature 玄锦) or `light` (素锦); every style ships both |
+| `data-jin-style` | 视觉语言：`jin`（默认）加八个目录风格——见下表 |
+| `data-jin-mode` | `dark`（Jin 的标志性模式「玄锦」）或 `light`（「素锦」）；每个风格两种都提供 |
 
-Each theme file is named `风格[.dark].css` and is **self-contained**: it restates the entire
-contract rather than relying on values left over from another style. Switching a theme is therefore
-just swapping a file — no cascade archaeology.
+每个主题文件命名为 `风格[.dark].css`，并且是**自洽**的：它重述整个契约，而不是依赖另一个风格残留
+下来的值。所以换主题只是换一个文件——不需要做层叠考古。
 
-Nine styles ship, and they were chosen to disagree with each other: where one puts its depth in a
-diffuse shadow, the next puts it in a hard offset, in a blur, in an inner shadow, or nowhere at all.
+随库发布九种风格，它们的选取标准就是彼此不同意：一种把深度放在弥散阴影里，下一种就放在硬偏移、
+模糊、内阴影里，或者干脆完全不表达。
 
-| Style | Radius (sm / md / lg) | Depth | Borders | Motion (base) |
+| 风格 | 圆角（sm / md / lg） | 深度 | 边框 | 动效（base） |
 | --- | --- | --- | --- | --- |
-| **Jin · 锦** (default) | 6 / 8 / 12px | diffuse shadow + micro-emboss | 1px gold filament | 200ms |
-| **Minimalism & Swiss Style** | 0 | none | 1px hairline | 250ms |
-| **Neumorphism** | 10 / 14 / 18px | light-and-shade shadow pairs + inset | 1px, near the surface | 200ms |
-| **Glassmorphism** | 8 / 14 / 18px | diffuse coloured shadow | 1px light edge | 220ms |
-| **Claymorphism** | 14 / 20 / 24px | thickness offset + soft shadow + inner highlight | 3px, tinted | 240ms, bounce |
-| **Flat Design** | 2 / 4 / 6px | none, declared as `none` | 1px line | 180ms |
-| **Neubrutalism** | 0 | hard offset, no blur radius | 3px black | 150ms |
-| **Brutalism** | 0 | none | 3px, always visible | 0s |
-| **Dimensional Layering** | 6 / 10 / 14px | four shadow levels | 1px hairline | 200ms |
+| **Jin · 锦**（默认） | 6 / 8 / 12px | 弥散阴影 + 微浮雕 | 1px 金线 | 200ms |
+| **极简 / 瑞士国际主义** | 0 | 无 | 1px 发丝线 | 250ms |
+| **新拟态** | 10 / 14 / 18px | 明暗成对阴影 + 内阴影 | 1px，贴近表面 | 200ms |
+| **玻璃拟态** | 8 / 14 / 18px | 弥散彩色阴影 | 1px 亮边 | 220ms |
+| **黏土拟态** | 14 / 20 / 24px | 厚度偏移 + 柔和投影 + 内高光 | 3px，柔色 | 240ms，回弹 |
+| **扁平设计** | 2 / 4 / 6px | 无，显式声明为 `none` | 1px 线 | 180ms |
+| **新粗野主义** | 0 | 硬偏移，无模糊半径 | 3px 黑 | 150ms |
+| **粗野主义** | 0 | 无 | 3px，始终可见 | 0s |
+| **维度分层** | 6 / 10 / 14px | 四级阴影 | 1px 发丝线 | 200ms |
 
-Titles use `--jin-font-display`, which is a second voice in Jin (serif/Songti) and the body face
-everywhere else; texture is Jin's warp/weft grid and `none` in the other eight.
+标题使用 `--jin-font-display`：在 Jin 里它是第二个声音（衬线 / 宋体），在其余风格里就是正文字族；
+质感方面，经纬纹样是 Jin 的专属，另外八个都是 `none`。
 
-Jin is the house style and the library default; it opens in its signature **dark** mode (玄锦), with a
-light variant (素锦). Its full specification is in [docs/theming.md](docs/theming.md); the one-line
-identity of every style is in the Gallery's style switcher, and the tokens any style defines are
-browsed live in the Gallery's token panel.
+Jin 是本库的自有风格与默认，以标志性的**深色**模式（玄锦）示人，另有浅色变体（素锦）。它的完整
+规范在 [docs/theming.md](docs/theming.md)；每个风格的一句话身份写在 Gallery 的风格切换器里，任何
+风格定义了哪些令牌可以在 Gallery 的令牌面板里实时浏览。
 
-Token names are frozen at the `--jin-` prefix. It is simultaneously the CSS namespace and the
-component namespace, so it is not something to be renamed later.
+令牌名冻结在 `--jin-` 前缀上。它同时是 CSS 命名空间和组件命名空间，所以这不是以后可以改的东西。
 
-### Where the styles come from
+### 这些风格从哪来
 
-**Jin（锦）is original work** — the library's own visual identity, and the default.
+**Jin（锦）是原创设计**——本库自己的视觉身份，也是默认风格。
 
-**The other styles are implementations of entries in
-[nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)**
-(MIT, © 2024 Next Level Builder), a catalogue of searchable UI styles. That catalogue is where the
-requirement to make tokens cover shape, depth and motion — not just colour — came from, and eight of
-its entries are implemented here: `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`,
-`claymorphism`, `flat-design`, `neubrutalism`, `brutalism` and `dimensional-layering`. They are the
-catalogue's mainstream styles, and the ones it references most often in its own product and UX
-guidance; [docs/theming.md](docs/theming.md) §8 lists them with the contract axis each one exercises.
+**其余风格是对
+[nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+中条目的实现**（MIT，© 2024 Next Level Builder），那是一个可检索的 UI 风格目录。正是这个目录提出
+了「令牌必须覆盖形状、深度与动效，而不只是颜色」这一要求，本库实现了其中八个条目：
+`minimalism-and-swiss-style`、`neumorphism`、`glassmorphism`、`claymorphism`、`flat-design`、
+`neubrutalism`、`brutalism` 与 `dimensional-layering`。它们是该目录的主流风格，也是它在自己的
+产品与 UX 指引里引用最多的那些；[docs/theming.md](docs/theming.md) 第八节列出了它们，以及每个风格
+各自压到的契约轴。
 
-We implement the *characteristics* of each style against this library's 80-token contract; no
-stylesheet from that project is copied, because it ships guidance rather than CSS. Every such theme
-credits its source in its own file header. Full attribution: [CREDITS.md](CREDITS.md).
+我们按本库的 80 令牌契约实现各风格的**特征**；没有复制该项目任何样式表，因为它提供的是设计指引而
+不是 CSS。每个此类主题都在自己的文件头里署名来源。完整署名：[CREDITS.md](CREDITS.md)。
 
-### Writing a theme
+### 写一个主题
 
-1. Copy the token list from `contracts/tokens.json` (or run the checker on a work in progress).
-2. Define **all** of them under `:root[data-jin-style='your-style']`.
-3. Run `npm run check` — token completeness is enforced mechanically, not by review.
-4. Add the file to the Gallery's `main.ts` imports and it becomes selectable.
-5. Run `npm run check:contrast` — a theme whose muted text lands at 4.4:1 looks fine and is not fine.
+1. 从 `contracts/tokens.json` 复制令牌清单（或对半成品直接跑检查器）。
+2. 在 `:root[data-jin-style='your-style']` 下定义**全部**令牌。
+3. 跑 `npm run check`——令牌完整性由机械检查强制，不靠 review。
+4. 把文件加进 Gallery 的 `main.ts`，它就成为可选项。
+5. 跑 `npm run check:contrast`——一个次要文字落在 4.4:1 的主题看起来没问题，而它确实有问题。
 
-`--jin-focus-ring-*` deserves a note: it is declared explicitly in every theme and never derived
-from the accent colour. Keyboard focus is a hard requirement, and a style that happens to place its
-accent near its own background would otherwise erase it.
+`--jin-focus-ring-*` 值得单独说一句：它在每个主题里都显式声明，绝不由强调色推导。键盘焦点是硬
+要求，否则某个恰好把强调色放在自身背景附近的风格会顺手把它抹掉。
 
 ---
 
-## What is in the box
+## 盒子里有什么
 
-**Feedback** — `JinSpinner` `JinProgress` `JinSkeleton` `JinAlert` `JinToastRegion`
+**反馈** —— `JinSpinner` `JinProgress` `JinSkeleton` `JinAlert` `JinToastRegion`
 `JinNotificationRegion` `JinResult`
-**Overlays** — `JinModal` `JinDrawer` `JinPopover` `JinTooltip` `JinPopconfirm`
-**Forms** — `JinField` `JinTextField` `JinSearchField` `JinSelect` `JinCheckbox` `JinRadioGroup`
-`JinSwitch` `JinHotkeyRecorder`
-**Navigation** — `JinTabs` `JinMenu` `JinDropdown` `JinContextMenu` `JinBreadcrumb` `JinDivider`
+**浮层** —— `JinModal` `JinDrawer` `JinPopover` `JinTooltip` `JinPopconfirm`
+**表单** —— `JinField` `JinTextField` `JinSearchField` `JinSelect` `JinCheckbox`
+`JinRadioGroup` `JinSwitch` `JinHotkeyRecorder`
+**导航** —— `JinTabs` `JinMenu` `JinDropdown` `JinContextMenu` `JinBreadcrumb` `JinDivider`
 `JinCard` `JinToolbar` `JinNav` `JinTree`
-**Data** — `JinBadge` `JinTag` `JinDetailList` `JinLink` `JinIcon`
+**数据** —— `JinBadge` `JinTag` `JinDetailList` `JinLink` `JinIcon`
 
-Deliberately absent, and why: date and time pickers, colour pickers, data grids, virtualised lists,
-avatars, carousels, sliders, ratings and product tours. Each is either a second product's worth of
-work (a calendar) or a solved-by-CSS non-problem (`text`, `label`, `link`), so none of them benefits
-from being abstracted into a shared control.
+刻意缺席的，以及原因：日期与时间选择器、颜色选择器、数据网格、虚拟列表、头像、轮播、滑块、评分和
+产品引导。它们要么是一整个产品的工作量（日历），要么是 CSS 已经解决了的伪问题（`text`、`label`、
+`link`），所以没有一个能从「被抽象成共享控件」里获益。
 
-### Toast versus notification
+### toast 与 notification 的区别
 
-They look similar and are not interchangeable:
+它们看起来相似，但不可互换：
 
-| | Toast | Notification |
+| | toast | notification |
 | --- | --- | --- |
-| Lifetime | auto-dismisses after a duration | stays until dismissed |
-| Interrupts | never — it must not demand a response | yes; it is for decisions |
-| Put in it | confirmation that something happened | anything the user must act on |
-| If ignored | nothing is lost | it is still there later |
+| 生命周期 | 到时自动消失 | 一直留在那里，直到被关闭 |
+| 是否打断 | 从不——它不该要求回应 | 会；它就是用来承载决定的 |
+| 用来放什么 | 确认「刚刚发生了什么」 | 用户必须处理的事 |
+| 被忽略时 | 什么也没丢 | 稍后它还在那儿 |
 
-Both run on the same queue, which is why the eviction rule matters: when a position is full, the
-**oldest toast** is dropped, never a notification. Losing a confirmation is a small annoyance;
-losing a decision the user still had to make is not.
-
----
-
-## Accessibility
-
-Not a checklist bolted on afterwards — it is why several modules exist at all.
-
-- Every interactive control is keyboard reachable with a visible focus ring drawn from the focus
-  tokens.
-- Overlays trap focus while open, and return it to the element that opened them on close — never to
-  `<body>`.
-- Nested overlays close one at a time: Escape reaches only the topmost entry.
-- State is never communicated by colour alone. Every tone pairs with an icon, and every value that
-  matters also appears as text.
-- `prefers-reduced-motion: reduce` sets every duration token to `0s`, and the mechanical animations
-  (spinner, skeleton sweep) are exempted on purpose, because a frozen spinner no longer says
-  "working".
-- Long lists and toolbars use roving tabindex: one tab stop for the group, arrows within it.
+两者跑在同一条队列上，所以淘汰规则很重要：当一个位置满了，被丢掉的是**最旧的 toast**，永远不是
+notification。丢掉一条确认只是点小烦恼；丢掉一个用户还等着做的决定不是。
 
 ---
 
-## Development
+## 可访问性
+
+不是事后补上的清单——它就是好几个模块存在的原因。
+
+- 每个可交互控件都能用键盘到达，并有取自焦点令牌的可见焦点环。
+- 浮层打开时锁定焦点，关闭时归还给打开它的元素——绝不归还到 `<body>`。
+- 嵌套浮层逐个关闭：Escape 只到达栈顶那一层。
+- 状态从不仅靠颜色传达。每个 tone 都配图标，每个要紧的取值同时以文字出现。
+- `prefers-reduced-motion: reduce` 把所有动效令牌置为 `0s`，机械类动画（spinner、骨架屏扫光）被
+  刻意豁免，因为冻住的 spinner 不再表示「正在工作」。
+- 长列表与工具栏使用 roving tabindex：整组一个 tab 停留点，组内用方向键移动。
+
+---
+
+## 开发
 
 ```bash
-npm install           # also builds dist/ (the `prepare` script)
-npm run hooks         # one time per clone: wire the git hooks (pre-commit, commit-msg)
-npm run test          # pure logic + component tests
-npm run test:coverage # the same, with a coverage floor on src/core
-npm run check         # the six discipline checks + the contrast audit
-npm run check:pack    # publint + arethetypeswrong on the packed tarball
+npm install           # 同时构建 dist/（`prepare` 脚本）
+npm run hooks         # 每个 clone 做一次：接上 git 钩子（pre-commit、commit-msg）
+npm run test          # 纯逻辑测试 + 组件测试
+npm run test:coverage # 同上，并对 src/core 设覆盖率下限
+npm run check         # 六项纪律检查 + 对比度审计
+npm run check:pack    # 对打包出的 tarball 跑 publint + arethetypeswrong
 npm run typecheck
-npm run verify        # check, test, typecheck and check:pack, in order
-npm run build         # dist/: ESM + one bundled index.d.ts + source maps
-npm run smoke         # pack the library and build a consumer project against it
+npm run verify        # 依次跑 check、test、typecheck 与 check:pack
+npm run build         # dist/：ESM + 单文件 index.d.ts + source map
+npm run smoke         # 打包本库，并对它构建一个消费者项目
 ```
 
-Two git hooks keep the conventions mechanical: `pre-commit` runs the token checks and
-`commit-msg` runs commitlint against the `type(scope): summary` convention. They live in
-`.husky/` and are wired by `npm run hooks` — deliberately not by `prepare`, because `prepare`
-also runs when the library is installed as a git dependency, and writing git hooks into a
-consumer's checkout would be wrong.
+两个 git 钩子把约定变成机械的：`pre-commit` 跑令牌检查，`commit-msg` 用 commitlint 校验
+`type(scope): summary` 约定。它们在 `.husky/` 里，由 `npm run hooks` 接上——刻意不放进
+`prepare`，因为库作为 git 依赖被安装时 `prepare` 也会执行，而往消费者的 checkout 里写 git 钩子
+是错的。
 
-### Packaging
+### 打包
 
-What an application resolves comes from `exports` in `package.json`, and each entry has two
-answers — the built one, and the `source` one a linked checkout asks for:
+应用解析到什么，由 `package.json` 的 `exports` 决定，每个入口都有两个答案——构建产物，以及被链接
+的 checkout 会要的 `source` 入口：
 
-| Specifier | Registry install | `conditions: ['source']` |
+| 说明符 | 从 registry 安装 | `conditions: ['source']` |
 | --- | --- | --- |
-| `@aeroscis/jin` | `dist/jin.js` + `dist/index.d.ts` | `src/index.ts` — with `customConditions: ['source']` in the consuming `tsconfig.json`, the editor follows too |
+| `@aeroscis/jin` | `dist/jin.js` + `dist/index.d.ts` | `src/index.ts`——使用方 `tsconfig.json` 里加上 `customConditions: ['source']` 后，编辑器也会跟随 |
 | `@aeroscis/jin/styles.css` | `src/styles/jin.css` | `src/styles/jin.css` |
 | `@aeroscis/jin/themes/*.css` | `themes/*.css` | `themes/*.css` |
 | `@aeroscis/jin/contracts/*.json` | `contracts/*.json` | `contracts/*.json` |
 
-The stylesheet ships as written rather than pre-built: the consumer's bundler minifies it either
-way, and one file that is the same in both modes cannot drift from itself. `npm pack` includes
-`dist/` (ESM, source maps, and a single bundled `index.d.ts` — api-extractor rolls the
-per-module declarations into one file, because the extensionless relative imports in the
-unbundled tree fail Node16 type resolution), `src/` (the stylesheet, and the sources the maps
-point at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence —
-97 files, 258 kB packed (down from 161 files: the per-module declaration tree is gone).
+样式表按原样发布，而不是预先构建：使用方的打包器无论如何都会压缩它，而一个在两种模式下都相同的文件
+不会与自己产生偏差。`npm pack` 包含 `dist/`（ESM、source map，以及打包成单文件的 `index.d.ts`
+——api-extractor 把逐模块声明卷成一个文件，因为未打包的目录树里那些无扩展名相对导入无法通过
+Node16 类型解析）、`src/`（样式表，以及 source map 指向的源文件）、`themes/`、`contracts/`、
+README、署名、变更日志与许可证——97 个文件，打包后 258 kB（从 161 个文件降下来：逐模块声明树没有
+了）。
 
-`npm run check:pack` audits the publish surface itself and is part of `verify`: publint
-validates `exports` and `files`, and arethetypeswrong type-resolves every entry point under
-node10, node16 and bundler resolution against the real tarball. One rule is ignored on
-purpose — `cjs-resolves-to-esm`: the package is ESM-only by design, so a `require()` that
-resolves to ESM is expected, not a defect.
+`npm run check:pack` 审计发布面本身，并且是 `verify` 的一部分：publint 校验 `exports` 与
+`files`，arethetypeswrong 对真实 tarball 在 node10、node16 与 bundler 三种解析模式下逐个入口做
+类型解析。有一条规则被刻意忽略——`cjs-resolves-to-esm`：本包按设计只有 ESM，所以 `require()` 解析
+到 ESM 是预期行为，不是缺陷。
 
-### Publishing
+### 发布
 
-Not published yet: the component API is still moving. The distribution paths today are a
-checkout on the same machine, `npm pack`'s tarball, and a git tag — in that order of
-convenience, and the reverse order of robustness. Hand someone the tarball: it carries `dist/`,
-so it installs with no build step and no lifecycle scripts. A git dependency is built by
-`prepare` on install, which `ignore-scripts` and script-approval policies switch off.
+尚未发布：组件 API 仍在移动。今天的分发方式有三种——同一台机器上的 checkout、`npm pack` 的
+tarball、以及一个 git tag——按便利程度从高到低，按健壮性从低到高。把 tarball 给别人：它带着
+`dist/`，所以安装时没有构建步骤、没有生命周期脚本。git 依赖会在安装时由 `prepare` 构建，而
+`ignore-scripts` 和脚本审批策略会把它关掉。
 
-The repository lives on Gitee as the primary remote and is mirrored read-only to GitHub
-(`Aeroscis/jin`): `origin` carries two push URLs, so `git push` writes both. The mirror is
-where CI runs — every push and pull request there executes `npm run verify`
-(`.github/workflows/ci.yml`).
+仓库以 Gitee 为主远端，只读镜像到 GitHub（`Aeroscis/jin`）：`origin` 带两个 push URL，所以
+`git push` 同时写两边。CI 跑在镜像上——每次 push 和每个 pull request 都会在那里执行
+`npm run verify`（`.github/workflows/ci.yml`）。
 
-Cutting a release stays exactly as [CHANGELOG.md](CHANGELOG.md) describes: one commit on
-`main` that bumps `package.json` and adds the entry, tagged `vX.Y.Z`. Pushing such a tag runs
-`.github/workflows/publish.yml` on the mirror, which publishes with `--provenance` using npm
-trusted publishing (OIDC) — no npm token is stored anywhere. The first publish is the one
-exception: it is done by hand to establish the package and its scope, and the trusted-publisher
-setting (this repository, `publish.yml`) is configured on npmjs.com afterwards. Until that is
-in place, release tags stay local so the tag-triggered workflow is not fired without anything
-to authenticate with.
+发版流程与 [CHANGELOG.md](CHANGELOG.md) 描述的完全一致：在 `main` 上一个提交，bump
+`package.json` 并加入条目，打上 `vX.Y.Z` 标签。推送这样的标签会在镜像上触发
+`.github/workflows/publish.yml`，它用 npm trusted publishing（OIDC）以 `--provenance` 发布
+——任何地方都不存 npm token。唯一的例外是首次发布：它手工执行，用来建立这个包和它的 scope，之后
+在 npmjs.com 上配置 trusted publisher（本仓库、`publish.yml`）。在配置完成之前，发布标签都留在
+本地，以免 tag 触发的工作流在没有任何可认证渠道的情况下被点燃。
 
-The name is settled for when that changes: **`@aeroscis/jin`**. It is scoped because npm is out of
-good names at this end of the alphabet — `jin` has been taken since 2012 and `jin-ui` since 2022 by
-an unrelated uni-app component library, and npm never recycles a name. `publishConfig.access` is
-`public`, because a scoped package defaults to private and the first publish would otherwise be
-refused.
+包名在发布时已经定好：**`@aeroscis/jin`**。之所以是 scoped 的，是因为 npm 在字母表这一段已经没有
+好名字了——`jin` 自 2012 年起被占，`jin-ui` 自 2022 年起被一个无关的 uni-app 组件库占用，而 npm
+从不回收名字。`publishConfig.access` 是 `public`，因为 scoped 包默认私有，否则首次发布会被拒。
 
-`npm publish` re-runs the gates first — `prepublishOnly` is `npm run verify && npm run smoke`, and
-`prepare` builds `dist/` — so a release cannot skip them. The smoke test is the one that matters for
-this section: it packs the library, extracts the tarball into a scratch project's `node_modules` as
-a real directory, and builds that project with a config that knows nothing about this checkout.
-Remove the `./styles.css` export, or drop `src` from `files`, and it fails with the reason.
+`npm publish` 会先重跑门禁——`prepublishOnly` 是 `npm run verify && npm run smoke`，`prepare`
+构建 `dist/`——所以发布无法跳过它们。对这一节来说关键是冒烟测试：它打包本库，把 tarball 作为真实
+目录解压进一个临时项目的 `node_modules`，并用一个对本 checkout 一无所知的配置构建那个项目。去掉
+`./styles.css` 导出，或者把 `src` 从 `files` 里删掉，它就会带着原因失败。
 
-### Starting the gallery
+### 启动 Gallery
 
 ```bash
-python start_gallery.py              # dev server, opens the browser
-python start_gallery.py --tauri      # the desktop shell
-python start_gallery.py --build      # production build, then serve it
-python start_gallery.py --port 5300  # a different port
-python start_gallery.py --no-browser # don't open a window
+python start_gallery.py              # dev server，自动打开浏览器
+python start_gallery.py --tauri      # 桌面外壳
+python start_gallery.py --build      # 生产构建，然后把它 serve 起来
+python start_gallery.py --port 5300  # 换一个端口
+python start_gallery.py --no-browser # 不打开窗口
 ```
 
-`npm run gallery` / `gallery:tauri` / `gallery:build` are equivalent — they call the same script.
+`npm run gallery` / `gallery:tauri` / `gallery:build` 等价——它们调的是同一个脚本。
 
-The script checks the prerequisites before starting (and says which one is missing), reuses a
-gallery that is already running on the port instead of starting a second one, moves to the next
-free port if something unrelated holds it, and kills the **whole process tree** on Ctrl+C. That
-last part matters more than it sounds: `npm` spawns `node`, which spawns `vite`, so interrupting
-only the parent leaves an orphan holding the port, and the next start then fails with "port already
-in use".
+脚本启动前会检查前置条件（并说明缺的是哪一个），如果端口上已经有一个 Gallery 在跑就直接复用而不是
+再起一个，如果端口被无关程序占着就顺延到下一个空闲端口，并且在 Ctrl+C 时杀掉**整棵进程树**。最后
+一点比听起来重要：`npm` 生出 `node`，`node` 再生出 `vite`，只中断父进程会留下一个占着端口的孤儿，
+下一次启动就会报「端口已被占用」。
 
-### The gallery is bilingual
+### Gallery 是双语的
 
-The switcher in the header carries three axes — style, mode and language — and the language one
-translates the whole application, including the library's own strings: `main.ts` passes the
-gallery's translator to `app.use(JinUI, { t })`, which is the integration path
-[consuming.md](docs/consuming.md) describes. English is the source language and falls through to the
-library's readable defaults, so an English reader still sees exactly what a consumer who passes no
-`t` at all would see; Simplified Chinese is the worked example, and switching to it changes every
-"Close", "Expand all" and "No data" the controls announce.
+页头的切换器带三条轴——风格、模式与语言——语言那一条会翻译整个应用，包括本库自己的文案：`main.ts`
+把 Gallery 的翻译函数传给 `app.use(JinUI, { t })`，也就是 [consuming.md](docs/consuming.md)
+描述的集成路径。英文是源语言，会回落到本库可读的默认值，所以英文读者看到的与一个完全不传 `t` 的
+消费者看到的完全一致；简体中文是那个做完整的示例，切过去之后，控件宣告的每一个「Close」、
+「Expand all」、「No data」都会改变。
 
-The choice persists (`jin-gallery.locale`), a first visit follows `navigator.language`, and
-`<html lang>` follows the choice so the font stack and a screen reader's pronunciation do too.
-Everything lives in `gallery/src/i18n/`: `locales/en.ts` is both the English copy and the key
-space, `locales/zh.ts` is typed against it — a string added without a translation fails the gallery
-typecheck — and `library.ts` covers the keys `contracts/strings.json` declares. A third language is
-one file plus one entry in `LOCALES`.
+选择会持久化（`jin-gallery.locale`），首次访问跟随 `navigator.language`，`<html lang>` 也跟随
+选择，字体栈与屏幕阅读器的发音随之改变。一切都在 `gallery/src/i18n/` 里：`locales/en.ts` 既是
+英文文案也是 key 空间，`locales/zh.ts` 对它做类型约束——加了一个字符串却没加翻译会让 Gallery 的
+类型检查失败——`library.ts` 覆盖 `contracts/strings.json` 声明的那些 key。加第三种语言是一个
+文件，加 `LOCALES` 里的一条。
 
-### The discipline checks
+### 纪律检查
 
-`tools/check_tokens.py` enforces the rules that code review reliably misses:
+`tools/check_tokens.py` 强制那些 code review 可靠地漏掉的规则：
 
-1. every theme file defines every contract token;
-2. no hardcoded colours, radii, shadows, durations or font sizes outside the theme layer;
-3. no business vocabulary anywhere in the library's source;
-4. no library file imports application code;
-5. `jin-` classes, `Jin*` components, `data-jin-*` attributes, and no global element selectors;
-6. the stylesheet marker the plugin reads is the one `src/styles/jin.css` actually declares — a
-   contract between two files that neither of them states on its own.
+1. 每个主题文件定义每一个契约令牌；
+2. 主题层之外没有硬编码的颜色、圆角、阴影、时长或字号；
+3. 本库源码里没有业务词汇；
+4. 没有库文件 import 应用代码；
+5. `jin-` 类名、`Jin*` 组件、`data-jin-*` 属性，且没有全局元素选择器；
+6. 插件读取的样式表标记与 `src/styles/jin.css` 实际声明的一致——一份两个文件各自都说不全的契约。
 
-`tools/check_contrast.py` separately measures every theme's text and focus colours against the
-surfaces they actually sit on, and fails below 4.5:1 (body text) or 3:1 (focus rings). It composites
-translucent tints onto their real background first, because comparing against a raw `rgba()` triple
-reports failures that do not exist — and misses ones that do.
+`tools/check_contrast.py` 单独测量每个主题的文字与焦点颜色，对比它们实际所在的表面，低于 4.5:1
+（正文）或 3:1（焦点环）就失败。它先把半透明色合成到真实背景上，因为拿原始 `rgba()` 三元组去比会
+报出并不存在的失败——同时漏掉真实存在的那些。
 
-Check 3 (no business vocabulary) has a deliberate gap. Catching an application's nouns means naming
-them, and naming them in a tracked file would publish the very words the rule keeps out. So a
-per-checkout file carries them:
+检查 3（无业务词汇）有一个刻意的缺口。抓住应用的名词就意味着要写出它们，而把它们写进受版本控制的
+文件，恰恰会把这条规则要挡住的那些词发布出去。所以由一份 per-checkout 文件承载：
 
 ```bash
 cp tools/check_tokens.local.json.example tools/check_tokens.local.json
-# then add your application's nouns
+# 然后加入你自己应用的名词
 ```
 
-That file is gitignored. Without it the generic checks still run, so a fresh clone behaves the
-same — it just cannot know which words are business vocabulary for *your* applications.
+该文件被 gitignore。没有它，通用检查照样运行，所以一个新 clone 的行为是一样的——它只是不知道哪些
+词是*你的*应用的业务词汇。
 
-The whitelists it uses (structural numbers, mechanical animation rates) are written out explicitly in
-the script, so relaxing a rule is a visible, reviewable act rather than a quiet regex tweak.
+它使用的白名单（结构性数字、机械动画速率）在脚本里显式写出，所以放宽一条规则是一个可见、可 review
+的动作，而不是偷偷改一句正则。
 
-### Architecture
+### 架构
 
 ```
-contracts/     the token and string contracts — the two files both applications agree on
-themes/        one file per style[.mode], each defining the whole contract
-               (nine styles — jin, minimalism-and-swiss-style, neumorphism,
-               glassmorphism, claymorphism, flat-design, neubrutalism,
-               brutalism, dimensional-layering — each with a .dark variant)
-src/core/      pure TypeScript: positioning, focus, roving tabindex, menu, tree, hotkeys, queue
-src/composables/  the DOM side of those modules, plus the overlay controller
-src/injection/    translation, capabilities, theme, and the plugin that wires them
-src/components/   one .vue file per control
-src/styles/       one stylesheet, rooted at .jin-* only
-tools/         the mechanical checks
-gallery/       the gallery application and its Tauri shell — also the en/zh i18n example
+contracts/        令牌与字符串契约 —— 两个文件，库与应用都同意它们
+themes/           每个风格[.模式]一个文件，每个都定义整个契约
+                  （九种风格 —— jin、minimalism-and-swiss-style、neumorphism、
+                  glassmorphism、claymorphism、flat-design、neubrutalism、
+                  brutalism、dimensional-layering —— 各带一个 .dark 变体）
+src/core/         纯 TypeScript：定位、焦点、roving tabindex、菜单、树、热键、队列
+src/composables/  上述模块的 DOM 那一半，以及浮层控制器
+src/injection/    翻译、能力、主题，以及把它们接起来的插件
+src/components/   每个控件一个 .vue 文件
+src/styles/       一份样式表，根选择器只有 .jin-*
+tools/            机械检查
+gallery/          Gallery 应用与它的 Tauri 外壳 —— 同时也是 en/zh 的 i18n 示例
 ```
 
-`src/core/` is where the interesting behaviour lives, and it is the part that can be tested without
-a browser. If a behaviour can be expressed as a decision, it belongs there rather than in a `.vue`
-file.
+`src/core/` 是有意思的行为所在，也是可以不用浏览器测试的那部分。如果一个行为可以表达成一个决定，
+它就该在那里，而不是在一个 `.vue` 文件里。
 
 ---
 
-## License
+## 许可
 
 MIT
