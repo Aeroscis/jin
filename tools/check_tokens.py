@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Jin token/style discipline checks.
 
-Six mechanical checks, run with `python tools/check_tokens.py` (or `npm run check`):
+Six mechanical checks, run with `python tools/check_tokens.py` (or `pnpm run check`):
 
   1. Token completeness   - every theme file defines every token in contracts/tokens.json
   2. No hardcoded values  - control styles contain no hex colours, px radii,

@@ -8,7 +8,7 @@ WCAG failure.
 
 This script reads the theme CSS directly — no browser, no build — and reports
 every pair that misses its target. Run it with `python tools/check_contrast.py`
-or as part of `npm run check`.
+or as part of `pnpm run check`.
 
 Two rules it applies that a naive checker gets wrong:
 

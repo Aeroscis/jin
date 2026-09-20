@@ -67,10 +67,10 @@
     "build": "vite build",
     "check": "python tools/check_tokens.py && python tools/check_contrast.py",
     "check:pack": "publint && attw --pack . --ignore-rules cjs-resolves-to-esm",
-    "verify": "npm run check && npm run test && npm run typecheck && npm run check:pack",
+    "verify": "pnpm run check && pnpm run test && pnpm run typecheck && pnpm run check:pack",
     "smoke": "python tools/smoke_pack.py",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run verify && npm run smoke",
+    "prepare": "pnpm run build",
+    "prepublishOnly": "pnpm run verify && pnpm run smoke",
     "hooks": "husky",
     "gallery": "python start_gallery.py",
     "gallery:build": "python start_gallery.py --build",
@@ -98,5 +98,12 @@
     "vitest": "^5.0.0",
     "vue": "^3.5.42",
     "vue-tsc": "^3.3.11"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.22.0",
+      "onFail": "warn"
+    }
   }
 }

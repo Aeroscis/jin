@@ -91,12 +91,12 @@ breaks one gets reverted rather than adjusted.
 ## Definition of done
 
 ```bash
-npm run verify     # check_tokens.py + check_contrast.py + vitest + vue-tsc + publint/attw
-npm run smoke      # packs the library and builds a consumer against the tarball (before publish)
-npm run gallery    # browser checkpoint — required for portal, positioning or theme changes
+pnpm run verify     # check_tokens.py + check_contrast.py + vitest + vue-tsc + publint/attw
+pnpm run smoke      # packs the library and builds a consumer against the tarball (before publish)
+pnpm run gallery    # browser checkpoint — required for portal, positioning or theme changes
 ```
 
-- `npm run verify` must pass. `tools/check_tokens.py` prints the offending file and line for each of
+- `pnpm run verify` must pass. `tools/check_tokens.py` prints the offending file and line for each of
   its six checks: complete themes, no hardcoded style values, no business words, one-way dependency,
   naming discipline, stylesheet marker agreement.
 - jsdom measures no layout, so nothing in a test can catch an overlay painted off-screen. Portal,
@@ -115,7 +115,11 @@ languages, and for a release a `CHANGELOG.md` entry plus a `package.json` bump i
 - Gitignored and local-only: `docs/*prompt.md`, `.workbuddy/`, `tools/check_tokens.local.json`.
   Never cite them from tracked files.
 - The checkers and the gallery launcher are Python (`python tools/check_tokens.py`,
-  `python start_gallery.py`); the test runner is vitest. Both are already wired into npm scripts.
+  `python start_gallery.py`); the test runner is vitest. Both are already wired into pnpm scripts.
+- Gitee is the primary remote and GitHub (`Aeroscis/jin`) is a read-only mirror. `origin` carries
+  both URLs as push URLs, so a single `git push` writes both; `git fetch` still reads Gitee only.
+  The mirror is where CI runs, and its `publish.yml` fires on any `v*` tag, so pushing a tag is a
+  publish — see Packaging in the README before pushing one.
 
 ## Conventions
 

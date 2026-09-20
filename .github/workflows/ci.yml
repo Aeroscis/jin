@@ -21,10 +21,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      # The version lives in package.json's `devEngines.packageManager`, which
+      # pnpm/action-setup does not read, so it is repeated here — keep the two
+      # in step. This must run before setup-node, whose `cache: pnpm` needs the
+      # pnpm store path to exist.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
-      - run: npm run verify
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run verify

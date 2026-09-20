@@ -97,10 +97,10 @@ Two lines in total, one per tool: `resolve.conditions` decides what the bundler 
 `customConditions` decides what the editor and `vue-tsc` read. Without the second one the types come
 from `dist/index.d.ts`, which is one build behind whatever you are editing.
 
-`npm install` inside the library builds `dist/` (its `prepare` script), so the dependency also
+`pnpm install` inside the library builds `dist/` (its `prepare` script), so the dependency also
 resolves without the `source` condition — that path reads the built ESM and declarations, which is
 what a tarball or registry install gets. Both are verified mechanically: the Gallery builds and type
-checks in source mode, and `npm run smoke` packs the library, installs the tarball into a scratch
+checks in source mode, and `pnpm run smoke` packs the library, installs the tarball into a scratch
 project and builds it against `dist/`, asserting that the stylesheet and the contracts arrive and
 that the shipped declarations type-check.
 [`docs/consuming.md`](consuming.md) is the long form, including the symptoms of getting it
@@ -234,9 +234,9 @@ credits its source in its own file header. Full attribution: [CREDITS.md](../CRE
 
 1. Copy the token list from `contracts/tokens.json` (or run the checker on a work in progress).
 2. Define **all** of them under `:root[data-jin-style='your-style']`.
-3. Run `npm run check` — token completeness is enforced mechanically, not by review.
+3. Run `pnpm run check` — token completeness is enforced mechanically, not by review.
 4. Add the file to the Gallery's `main.ts` imports and it becomes selectable.
-5. Run `npm run check:contrast` — a theme whose muted text lands at 4.4:1 looks fine and is not fine.
+5. Run `pnpm run check:contrast` — a theme whose muted text lands at 4.4:1 looks fine and is not fine.
 
 `--jin-focus-ring-*` deserves a note: it is declared explicitly in every theme and never derived
 from the accent colour. Keyboard focus is a hard requirement, and a style that happens to place its
@@ -298,21 +298,21 @@ Not a checklist bolted on afterwards — it is why several modules exist at all.
 ## Development
 
 ```bash
-npm install           # also builds dist/ (the `prepare` script)
-npm run hooks         # one time per clone: wire the git hooks (pre-commit, commit-msg)
-npm run test          # pure logic + component tests
-npm run test:coverage # the same, with a coverage floor on src/core
-npm run check         # the six discipline checks + the contrast audit
-npm run check:pack    # publint + arethetypeswrong on the packed tarball
-npm run typecheck
-npm run verify        # check, test, typecheck and check:pack, in order
-npm run build         # dist/: ESM + one bundled index.d.ts + source maps
-npm run smoke         # pack the library and build a consumer project against it
+pnpm install           # also builds dist/ (the `prepare` script)
+pnpm run hooks         # one time per clone: wire the git hooks (pre-commit, commit-msg)
+pnpm run test          # pure logic + component tests
+pnpm run test:coverage # the same, with a coverage floor on src/core
+pnpm run check         # the six discipline checks + the contrast audit
+pnpm run check:pack    # publint + arethetypeswrong on the packed tarball
+pnpm run typecheck
+pnpm run verify        # check, test, typecheck and check:pack, in order
+pnpm run build         # dist/: ESM + one bundled index.d.ts + source maps
+pnpm run smoke         # pack the library and build a consumer project against it
 ```
 
 Two git hooks keep the conventions mechanical: `pre-commit` runs the token checks and
 `commit-msg` runs commitlint against the `type(scope): summary` convention. They live in
-`.husky/` and are wired by `npm run hooks` — deliberately not by `prepare`, because `prepare`
+`.husky/` and are wired by `pnpm run hooks` — deliberately not by `prepare`, because `prepare`
 also runs when the library is installed as a git dependency, and writing git hooks into a
 consumer's checkout would be wrong.
 
@@ -336,7 +336,7 @@ unbundled tree fail Node16 type resolution), `src/` (the stylesheet, and the sou
 point at), `themes/`, `contracts/`, the README, the credits, the changelog and the licence —
 97 files, 258 kB packed (down from 161 files: the per-module declaration tree is gone).
 
-`npm run check:pack` audits the publish surface itself and is part of `verify`: publint
+`pnpm run check:pack` audits the publish surface itself and is part of `verify`: publint
 validates `exports` and `files`, and arethetypeswrong type-resolves every entry point under
 node10, node16 and bundler resolution against the real tarball. One rule is ignored on
 purpose — `cjs-resolves-to-esm`: the package is ESM-only by design, so a `require()` that
@@ -352,7 +352,7 @@ so it installs with no build step and no lifecycle scripts. A git dependency is 
 
 The repository lives on Gitee as the primary remote and is mirrored read-only to GitHub
 (`Aeroscis/jin`): `origin` carries two push URLs, so `git push` writes both. The mirror is
-where CI runs — every push and pull request there executes `npm run verify`
+where CI runs — every push and pull request there executes `pnpm run verify`
 (`.github/workflows/ci.yml`).
 
 Cutting a release stays exactly as [CHANGELOG.md](../CHANGELOG.md) describes: one commit on
@@ -370,7 +370,7 @@ an unrelated uni-app component library, and npm never recycles a name. `publishC
 `public`, because a scoped package defaults to private and the first publish would otherwise be
 refused.
 
-`npm publish` re-runs the gates first — `prepublishOnly` is `npm run verify && npm run smoke`, and
+`npm publish` re-runs the gates first — `prepublishOnly` is `pnpm run verify && pnpm run smoke`, and
 `prepare` builds `dist/` — so a release cannot skip them. The smoke test is the one that matters for
 this section: it packs the library, extracts the tarball into a scratch project's `node_modules` as
 a real directory, and builds that project with a config that knows nothing about this checkout.
@@ -386,7 +386,7 @@ python start_gallery.py --port 5300  # a different port
 python start_gallery.py --no-browser # don't open a window
 ```
 
-`npm run gallery` / `gallery:tauri` / `gallery:build` are equivalent — they call the same script.
+`pnpm run gallery` / `gallery:tauri` / `gallery:build` are equivalent — they call the same script.
 
 The script checks the prerequisites before starting (and says which one is missing), reuses a
 gallery that is already running on the port instead of starting a second one, moves to the next

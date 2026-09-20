@@ -88,9 +88,9 @@ export default defineConfig({
 一共两行，一个工具一行：`resolve.conditions` 决定打包器运行什么，`customConditions` 决定编辑器和
 `vue-tsc` 读什么。少了后面那一条，类型来自 `dist/index.d.ts`，永远落后你正在编辑的源码一个构建。
 
-在库目录里跑 `npm install` 会构建 `dist/`（它的 `prepare` 脚本），所以不启用 `source` 条件也能
+在库目录里跑 `pnpm install` 会构建 `dist/`（它的 `prepare` 脚本），所以不启用 `source` 条件也能
 解析——那条路径读的是构建后的 ESM 与声明文件，也就是 tarball 或从 registry 安装时拿到的东西。
-两条路径都有机械验证：Gallery 以 source 模式构建并做类型检查；`npm run smoke` 则打包本库、把
+两条路径都有机械验证：Gallery 以 source 模式构建并做类型检查；`pnpm run smoke` 则打包本库、把
 tarball 装进一个临时项目、对 `dist/` 构建它，并断言样式表与契约文件到位、随包发布的声明文件能通过
 类型检查。[`docs/consuming.md`](docs/consuming.md)（英文）是长文，包括弄错时的症状。
 
@@ -217,9 +217,9 @@ Jin 是本库的自有风格与默认，以标志性的**深色**模式（玄锦
 
 1. 从 `contracts/tokens.json` 复制令牌清单（或对半成品直接跑检查器）。
 2. 在 `:root[data-jin-style='your-style']` 下定义**全部**令牌。
-3. 跑 `npm run check`——令牌完整性由机械检查强制，不靠 review。
+3. 跑 `pnpm run check`——令牌完整性由机械检查强制，不靠 review。
 4. 把文件加进 Gallery 的 `main.ts`，它就成为可选项。
-5. 跑 `npm run check:contrast`——一个次要文字落在 4.4:1 的主题看起来没问题，而它确实有问题。
+5. 跑 `pnpm run check:contrast`——一个次要文字落在 4.4:1 的主题看起来没问题，而它确实有问题。
 
 `--jin-focus-ring-*` 值得单独说一句：它在每个主题里都显式声明，绝不由强调色推导。键盘焦点是硬
 要求，否则某个恰好把强调色放在自身背景附近的风格会顺手把它抹掉。
@@ -274,20 +274,20 @@ notification。丢掉一条确认只是点小烦恼；丢掉一个用户还等�
 ## 开发
 
 ```bash
-npm install           # 同时构建 dist/（`prepare` 脚本）
-npm run hooks         # 每个 clone 做一次：接上 git 钩子（pre-commit、commit-msg）
-npm run test          # 纯逻辑测试 + 组件测试
-npm run test:coverage # 同上，并对 src/core 设覆盖率下限
-npm run check         # 六项纪律检查 + 对比度审计
-npm run check:pack    # 对打包出的 tarball 跑 publint + arethetypeswrong
-npm run typecheck
-npm run verify        # 依次跑 check、test、typecheck 与 check:pack
-npm run build         # dist/：ESM + 单文件 index.d.ts + source map
-npm run smoke         # 打包本库，并对它构建一个消费者项目
+pnpm install           # 同时构建 dist/（`prepare` 脚本）
+pnpm run hooks         # 每个 clone 做一次：接上 git 钩子（pre-commit、commit-msg）
+pnpm run test          # 纯逻辑测试 + 组件测试
+pnpm run test:coverage # 同上，并对 src/core 设覆盖率下限
+pnpm run check         # 六项纪律检查 + 对比度审计
+pnpm run check:pack    # 对打包出的 tarball 跑 publint + arethetypeswrong
+pnpm run typecheck
+pnpm run verify        # 依次跑 check、test、typecheck 与 check:pack
+pnpm run build         # dist/：ESM + 单文件 index.d.ts + source map
+pnpm run smoke         # 打包本库，并对它构建一个消费者项目
 ```
 
 两个 git 钩子把约定变成机械的：`pre-commit` 跑令牌检查，`commit-msg` 用 commitlint 校验
-`type(scope): summary` 约定。它们在 `.husky/` 里，由 `npm run hooks` 接上——刻意不放进
+`type(scope): summary` 约定。它们在 `.husky/` 里，由 `pnpm run hooks` 接上——刻意不放进
 `prepare`，因为库作为 git 依赖被安装时 `prepare` 也会执行，而往消费者的 checkout 里写 git 钩子
 是错的。
 
@@ -310,7 +310,7 @@ Node16 类型解析）、`src/`（样式表，以及 source map 指向的源文�
 README、署名、变更日志与许可证——97 个文件，打包后 258 kB（从 161 个文件降下来：逐模块声明树没有
 了）。
 
-`npm run check:pack` 审计发布面本身，并且是 `verify` 的一部分：publint 校验 `exports` 与
+`pnpm run check:pack` 审计发布面本身，并且是 `verify` 的一部分：publint 校验 `exports` 与
 `files`，arethetypeswrong 对真实 tarball 在 node10、node16 与 bundler 三种解析模式下逐个入口做
 类型解析。有一条规则被刻意忽略——`cjs-resolves-to-esm`：本包按设计只有 ESM，所以 `require()` 解析
 到 ESM 是预期行为，不是缺陷。
@@ -324,7 +324,7 @@ tarball、以及一个 git tag——按便利程度从高到低，按健壮性�
 
 仓库以 Gitee 为主远端，只读镜像到 GitHub（`Aeroscis/jin`）：`origin` 带两个 push URL，所以
 `git push` 同时写两边。CI 跑在镜像上——每次 push 和每个 pull request 都会在那里执行
-`npm run verify`（`.github/workflows/ci.yml`）。
+`pnpm run verify`（`.github/workflows/ci.yml`）。
 
 发版流程与 [CHANGELOG.md](CHANGELOG.md) 描述的完全一致：在 `main` 上一个提交，bump
 `package.json` 并加入条目，打上 `vX.Y.Z` 标签。推送这样的标签会在镜像上触发
@@ -337,7 +337,7 @@ tarball、以及一个 git tag——按便利程度从高到低，按健壮性�
 好名字了——`jin` 自 2012 年起被占，`jin-ui` 自 2022 年起被一个无关的 uni-app 组件库占用，而 npm
 从不回收名字。`publishConfig.access` 是 `public`，因为 scoped 包默认私有，否则首次发布会被拒。
 
-`npm publish` 会先重跑门禁——`prepublishOnly` 是 `npm run verify && npm run smoke`，`prepare`
+`npm publish` 会先重跑门禁——`prepublishOnly` 是 `pnpm run verify && pnpm run smoke`，`prepare`
 构建 `dist/`——所以发布无法跳过它们。对这一节来说关键是冒烟测试：它打包本库，把 tarball 作为真实
 目录解压进一个临时项目的 `node_modules`，并用一个对本 checkout 一无所知的配置构建那个项目。去掉
 `./styles.css` 导出，或者把 `src` 从 `files` 里删掉，它就会带着原因失败。
@@ -352,7 +352,7 @@ python start_gallery.py --port 5300  # 换一个端口
 python start_gallery.py --no-browser # 不打开窗口
 ```
 
-`npm run gallery` / `gallery:tauri` / `gallery:build` 等价——它们调的是同一个脚本。
+`pnpm run gallery` / `gallery:tauri` / `gallery:build` 等价——它们调的是同一个脚本。
 
 脚本启动前会检查前置条件（并说明缺的是哪一个），如果端口上已经有一个 Gallery 在跑就直接复用而不是
 再起一个，如果端口被无关程序占着就顺延到下一个空闲端口，并且在 Ctrl+C 时杀掉**整棵进程树**。最后

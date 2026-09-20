@@ -23,13 +23,21 @@ jobs:
         with:
           python-version: '3.12'
 
+      # The version lives in package.json's `devEngines.packageManager`, which
+      # pnpm/action-setup does not read, so it is repeated here — keep the two
+      # in step. This must run before setup-node, whose `cache: pnpm` needs the
+      # pnpm store path to exist.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
-          cache: npm
+          cache: pnpm
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
       # prepublishOnly runs `verify && smoke` first, so the gates still
       # cannot be skipped — they just run here instead of on a laptop.

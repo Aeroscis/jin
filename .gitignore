@@ -17,6 +17,10 @@ gallery/src-tauri/target/
 .DS_Store
 *.log
 
+# Python bytecode from the tools/ checkers and the gallery launcher
+__pycache__/
+*.py[cod]
+
 # agent tooling scratch space (session notes, not project history)
 .workbuddy/
 

@@ -5,13 +5,13 @@
     python start_gallery.py --tauri    # the Tauri desktop shell
     python start_gallery.py --build    # production build, then serve it
 
-Three things this does that a bare `npm run dev` does not:
+Three things this does that a bare `pnpm run dev` does not:
 
   * checks the prerequisites first and says which one is missing, instead of
-    letting npm fail with an error about a file nobody can find;
+    letting pnpm fail with an error about a file nobody can find;
   * notices that a gallery is already running on the port and simply opens the
     browser, rather than starting a second server;
-  * kills the whole process tree on exit. `npm` spawns `node`, which spawns
+  * kills the whole process tree on exit. `pnpm` spawns `node`, which spawns
     `vite`: killing only the parent leaves an orphan holding the port, which is
     why the next start then fails with "port already in use".
 """
@@ -58,21 +58,33 @@ def fail(message: str, hint: str | None = None) -> None:
 # --------------------------------------------------------------------------
 # prerequisites
 # --------------------------------------------------------------------------
-def npm_command() -> str:
-    """Resolve the npm executable once, for every call site.
+def pnpm_command() -> str:
+    """Resolve the pnpm executable once, for every call site.
 
-    On Windows npm is `npm.cmd`, and CreateProcess does not append extensions,
-    so a bare "npm" raises FileNotFoundError. Resolving it here keeps the
+    On Windows pnpm is `pnpm.cmd`, and CreateProcess does not append extensions,
+    so a bare "pnpm" raises FileNotFoundError. Resolving it here keeps the
     check, the spawns and the install step from disagreeing with each other.
     """
     from shutil import which
 
-    for candidate in ("npm.cmd", "npm") if os.name == "nt" else ("npm",):
+    for candidate in ("pnpm.cmd", "pnpm") if os.name == "nt" else ("pnpm",):
         found = which(candidate)
         if found:
             return found
-    fail("npm is not on PATH.", "Install Node.js 20+ and reopen the terminal.")
+    fail("pnpm is not on PATH.", "Install Node.js 20+, then: corepack enable pnpm")
     raise SystemExit(1)  # unreachable; keeps type checkers happy
+
+
+def pnpm_run(*args: str) -> list[str]:
+    """A pnpm command line that survives a local pnpm older than the pin.
+
+    `package.json` pins pnpm through `devEngines.packageManager`. A pnpm that
+    wants to switch versions instead of running would try to fetch that exact
+    build first, and on a machine where it cannot, the run dies before vite is
+    ever reached. The scripts here only need a pnpm recent enough to read the
+    lockfile, so the version check is told to warn rather than fail.
+    """
+    return [pnpm_command(), "--pm-on-fail=ignore", *args]
 
 
 def cargo_available() -> bool:
@@ -83,17 +95,17 @@ def cargo_available() -> bool:
 
 def require() -> None:
     """Fail early, with the actual missing piece named."""
-    npm_command()  # exits with a clear message when npm is absent
+    pnpm_command()  # exits with a clear message when pnpm is absent
 
     if not (ROOT / "node_modules").is_dir():
         fail(
             "the library's dependencies are not installed.",
-            f"Run:  cd {ROOT} && npm install",
+            f"Run:  cd {ROOT} && pnpm install",
         )
     if not (GALLERY / "node_modules").is_dir():
         fail(
             "the gallery's dependencies are not installed.",
-            f"Run:  cd {GALLERY} && npm install",
+            f"Run:  cd {GALLERY} && pnpm install",
         )
     if not (GALLERY / "src-tauri").is_dir():
         fail("gallery/src-tauri is missing, so --tauri cannot run.")
@@ -243,7 +255,7 @@ def check_and_start_browser(port: int) -> tuple[subprocess.Popen[str] | None, in
         say(f"port {port} is taken by something else; looking for a free one")
         port = free_port(port + 1)
 
-    child = spawn([npm_command(), "run", "dev", "--", "--port", str(port), "--strictPort"], GALLERY)
+    child = spawn([*pnpm_run("run", "dev"), "--", "--port", str(port), "--strictPort"], GALLERY)
     if not wait_until_ready(port, child):
         if child.poll() is not None:
             fail("the dev server exited before it was ready.", "Its output is above.")
@@ -280,14 +292,14 @@ def run_tauri(port: int) -> int:
     if not cargo_available():
         fail("cargo is not on PATH, so the Tauri shell cannot be built.", "Install Rust: https://rustup.rs")
     say("building and starting the desktop shell (the first build takes a while)")
-    child = spawn([npm_command(), "run", "tauri:dev"], GALLERY)
+    child = spawn(pnpm_run("run", "tauri:dev"), GALLERY)
     return stream(child)
 
 
 def run_build(port: int, open_browser: bool) -> int:
     say("building the gallery for production")
     build = subprocess.run(
-        [npm_command(), "run", "build"],
+        pnpm_run("run", "build"),
         cwd=str(GALLERY),
         check=False,
     )
@@ -295,7 +307,7 @@ def run_build(port: int, open_browser: bool) -> int:
         fail("the production build failed.")
 
     say("serving the build")
-    child = spawn([npm_command(), "run", "preview", "--", "--port", str(port), "--strictPort"], GALLERY)
+    child = spawn([*pnpm_run("run", "preview"), "--", "--port", str(port), "--strictPort"], GALLERY)
     if not wait_until_ready(port, child):
         fail(f"the preview server did not answer on port {port}.")
     url = f"http://localhost:{port}/"
@@ -344,10 +356,10 @@ def main() -> int:
     require()
 
     if not (GALLERY / "node_modules" / ".bin").is_dir():
-        say("gallery dependencies look incomplete; running npm install first")
-        install = subprocess.run([npm_command(), "install"], cwd=str(GALLERY), check=False)
+        say("gallery dependencies look incomplete; running pnpm install first")
+        install = subprocess.run(pnpm_run("install"), cwd=str(GALLERY), check=False)
         if install.returncode != 0:
-            fail("npm install failed.")
+            fail("pnpm install failed.")
 
     if args.tauri:
         return run_tauri(args.port)

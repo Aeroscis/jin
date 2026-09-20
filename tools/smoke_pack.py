@@ -7,7 +7,7 @@ condition, no `*.vue` shim. That is the only way to catch an `exports` map that
 lies, a stylesheet that never reaches the bundle, a `files` list that drops
 something the map points at, or declarations whose specifiers do not resolve.
 
-Run with `npm run smoke`. The scratch project is left in place when a step fails,
+Run with `pnpm run smoke`. The scratch project is left in place when a step fails,
 because that is when it is worth reading.
 """
 
@@ -113,7 +113,19 @@ def binary(name: str) -> str:
 
 def run(label: str, command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     print(f"  {DIM}{label}{RESET}")
-    result = subprocess.run(command, cwd=cwd, capture_output=True, text=True, shell=True)
+    # Encoding pinned deliberately: `text=True` alone decodes with the locale
+    # codec, which is GBK on a Chinese Windows and mangles any non-ASCII byte a
+    # child prints. The decode then raises inside the reader thread, so the
+    # failure surfaces as a hang rather than as an error worth reading.
+    result = subprocess.run(
+        command,
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        shell=True,
+    )
     if result.returncode != 0:
         print(f"{RED}FAIL{RESET} {label}")
         for stream in (result.stdout, result.stderr):

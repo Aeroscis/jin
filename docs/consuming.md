@@ -28,7 +28,8 @@ With npm, a `file:` dependency on a local directory becomes a symlink. That is w
 to the library appear in the application immediately, and no build step sits between them.
 
 If you are handing the library to someone else, hand them the tarball. A git dependency is built on
-install — npm runs the library's `prepare`, which needs the dev dependencies to be reachable from the
+install — the package manager runs the library's `prepare`, which needs the dev dependencies to be
+reachable from the
 registry — so with `ignore-scripts` set, or a script-approval policy in force, it arrives without
 `dist/` and nothing resolves. The tarball from `npm pack` carries `dist/` inside it and installs with
 no scripts at all.
@@ -235,13 +236,13 @@ persist anything itself; that is the application's job, and the Gallery shows on
 | --- | --- | --- |
 | Controls render, all of them unstyled, nothing in the console from the library | The base stylesheet was never imported | `import '@aeroscis/jin/styles.css'` in the entry file — the plugin also warns once at startup when it is missing |
 | Reactivity silently stops working; `provide`/`inject` returns nothing | Two Vue instances — the linked library loaded its own copy | Add `resolve.dedupe: ['vue']` |
-| The application runs the library's built code, and library edits do not appear | `file:` dependency without `resolve.conditions: ['source']` | Add the condition, or drop it and let `npm install` in the library rebuild `dist/` |
+| The application runs the library's built code, and library edits do not appear | `file:` dependency without `resolve.conditions: ['source']` | Add the condition, or drop it and let `pnpm install` in the library rebuild `dist/` |
 | The editor and `vue-tsc` report types that are a build behind | Runtime takes the `source` condition, the type checker does not | Add `customConditions: ['source']` to the consuming `tsconfig.json` |
 | Dev server returns 403 for library files | The library is outside the app root | Add `server.fs.allow` covering the parent directory |
 | Every message appears twice | The toast/notification regions are mounted more than once | Mount them once, at the root |
 | A themed control looks unstyled | The theme file was not imported, so the tokens are missing | Import the theme, or accept the token fallbacks in the stylesheet |
 | "Cannot find module '@aeroscis/jin/styles'" after upgrading | The specifier is now `@aeroscis/jin/styles.css` — the missing `.css` was never resolvable through the package's `exports` | Rename the import |
-| Styles leak into the application | The application wrote a `.jin-*` selector, or the library gained a global element selector | Run `npm run check` — both are caught mechanically |
+| Styles leak into the application | The application wrote a `.jin-*` selector, or the library gained a global element selector | Run `pnpm run check` — both are caught mechanically |
 
 ---
 
