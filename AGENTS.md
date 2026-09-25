@@ -31,7 +31,7 @@ list, with the contract axis each style exercises, is docs/theming.md §8.
 | `themes/` | 18 files: nine styles (`jin`, `minimalism-and-swiss-style`, `neumorphism`, `glassmorphism`, `claymorphism`, `flat-design`, `neubrutalism`, `brutalism`, `dimensional-layering`), each with a `.dark` variant. |
 | `contracts/` | `tokens.json` (80 tokens) and `strings.json` (25 UI strings). |
 | `docs/` | `architecture.md` (why it is shaped this way), `components.md` (API reference), `consuming.md`, `theming.md`, and `README.en.md`, the English twin of the root README. |
-| `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` link, so edits are live there. Its `src/i18n/` holds the en/zh dictionaries, the locale state, and the `t` it passes to `JinUI`. |
+| `gallery/` | Vue 3 + Tauri demo app, and the browser-side checkpoint. Consumes the library through a `file:..` dependency, which pnpm hard-links into the gallery's virtual store: an in-place edit to an existing file is live there, an added or deleted one needs a reinstall. Its `src/i18n/` holds the en/zh dictionaries, the locale state, and the `t` it passes to `JinUI`. |
 | `tools/*.py` | `check_tokens.py` (six discipline checks), `check_contrast.py`, `smoke_pack.py`. |
 | `tests/` | Vitest. Pure logic runs in Node; component tests opt into jsdom with a `// @vitest-environment jsdom` docblock. `gallery-i18n.spec.ts` guards the gallery dictionaries against the pages that use them. |
 
@@ -109,9 +109,10 @@ languages, and for a release a `CHANGELOG.md` entry plus a `package.json` bump i
 
 ## Environment gotchas
 
-- `gallery/node_modules/@aeroscis/jin` is a symlink to the repository root, so it nests into itself.
-  On Windows, `git status` prints `Filename too long` warnings and a recursive listing never ends.
-  Cosmetic — ignore it, do not "fix" it.
+- `gallery/node_modules/@aeroscis/jin` is a pnpm-internal symlink into `gallery/node_modules/.pnpm/`,
+  where the `file:..` dependency is hard-linked. Nothing points back at the repository root, so a
+  recursive listing terminates and `git status` stays quiet; the `Filename too long` warnings and the
+  endless listing belonged to the npm install this replaced.
 - Gitignored and local-only: `docs/*prompt.md`, `.workbuddy/`, `tools/check_tokens.local.json`.
   Never cite them from tracked files.
 - The checkers and the gallery launcher are Python (`python tools/check_tokens.py`,
